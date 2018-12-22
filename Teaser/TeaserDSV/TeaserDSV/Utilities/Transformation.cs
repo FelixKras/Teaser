@@ -184,8 +184,8 @@ namespace TeaserDSV.Utilities
 
             double[,] mat = new double[3, 4]
             {
-                {CameraSettings.FocalX, 0.0, CameraSettings.SensorWidth/2D,0},
-                {0.0, CameraSettings.FocalY, CameraSettings.SensorHeight/2D, 0},
+                {CameraSettings.FocalX, 0.0, CameraSettings.SensorWidth/2D,-CameraSettings.SensorWidth/2D},
+                {0.0, CameraSettings.FocalY, CameraSettings.SensorHeight/2D, -CameraSettings.SensorWidth/2D},
                 {0.0, 0.0, 1, 0}
                 };
             return mat;
@@ -205,7 +205,7 @@ namespace TeaserDSV.Utilities
             static CameraSettings()
             {
                 FocalX = SensorWidth/2D /  Math.Tan(Rotations.ToRadians(FOVangAz) / 2);
-                FocalY = SensorHeight/2D / Math.Tan(Rotations.ToRadians(FOVangAz) / 2);
+                FocalY = SensorHeight/2D / Math.Tan(Rotations.ToRadians(FOVangEl) / 2);
 
             }
         }

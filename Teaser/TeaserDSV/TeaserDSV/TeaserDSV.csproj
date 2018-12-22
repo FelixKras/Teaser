@@ -92,6 +92,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\BLAS.cs" />
+    <Compile Include="Utilities\Convex.cs" />
     <Compile Include="Utilities\Transformation.cs" />
     <Compile Include="Utils.cs" />
     <EmbeddedResource Include="fC3.resx">

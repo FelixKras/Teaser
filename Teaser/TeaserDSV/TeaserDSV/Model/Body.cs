@@ -27,31 +27,27 @@ namespace TeaserDSV.Model
 
         public double RollAngle { get; set; }
 
-
-        public double[] CenterOfMassCartesian { get; set; }
-
-        public void ComputeProjection()
+        public void ComputeProjection(double[] CenterOfMassCartesian)
         {   /*
             rotation_matrix = yaw_rotation_matrix * pitch_rotation_matrix * roll_rotation_matrix;
             world_matrix = translation_matrix * rotation_matrix;
             */
+
             ImagePoints = new ShapePoint2D[OriginalPoints.Length];
 
+            #region Debug
 #warning DEBUG
-            RollAngle = PitchAngle = YawAngle = 0;
-            CenterOfMassCartesian=new double[]{100,0,0};
-            OriginalPoints[0].X = 1;
-            OriginalPoints[0].Y = OriginalPoints[0].Z = 0;
+            //var TestVec = new double[] {-0.5, 0.5, 0.7071, 1};
+            //RollAngle = 0;
+            //PitchAngle = 45;
+            //YawAngle = 45;
+            //CenterOfMassCartesian = new double[] { 0, 50, 100 };
+            
+            #endregion
 
-            OriginalPoints[1].Y = 1;
-            OriginalPoints[1].X = OriginalPoints[1].Z = 0;
-
-            OriginalPoints[1].Z = 1;
-            OriginalPoints[1].X = OriginalPoints[1].Y = 0;
-
-            double[,] R_roll = Rotations.CreateRotationMatrixRoll(Rotations.ToRadians(RollAngle));
-            double[,] R_pitch = Rotations.CreateRotationMatrixPitch(Rotations.ToRadians(PitchAngle));
-            double[,] R_yaw = Rotations.CreateRotationMatrixYaw(Rotations.ToRadians(YawAngle));
+            double[,] R_roll = Rotations.CreateRotationMatrixRoll(Rotations.ToRadians(RollAngle)); //Rx
+            double[,] R_pitch = Rotations.CreateRotationMatrixPitch(Rotations.ToRadians(PitchAngle)); //Ry
+            double[,] R_yaw = Rotations.CreateRotationMatrixYaw(Rotations.ToRadians(YawAngle)); //Rz
 
             double[,] temp = BLAS.Multiply(R_pitch, R_roll);
             double[,] R_Gen = BLAS.Multiply(R_yaw, temp);
@@ -65,21 +61,24 @@ namespace TeaserDSV.Model
             */
 
             double[,] Cam_Project_mat = Camera.CreateProjectionMatrix();
-#warning DEBUG
-            Cam_Project_mat = new double[3,4]
-            {
-                {1,0,0,0},
-                {0,1,0,0},
-                {0,0,1,0}
-            };
-
+   
             double[,] FinalMat = BLAS.Multiply(Cam_Project_mat, World_mat);
 
+            #region Debug
+#warning DEBUG
+            //double[] Testtransf = BLAS.Multiply(FinalMat, TestVec);
+            //Testtransf[0] /= Testtransf[2];
+            //Testtransf[1] /= Testtransf[2];
+            //Testtransf[2] /= Testtransf[2];
+            #endregion
             for (int ii = 0; ii < OriginalPoints.Length; ii++)
             {
                 // Apply transformation to original position
-                double[] vec = new double[] { OriginalPoints[ii].X, OriginalPoints[ii].Y, OriginalPoints[ii].Z,1 };
-                double[] transf = BLAS.Multiply(vec, FinalMat);
+                double[] vec = new double[] { OriginalPoints[ii].X, OriginalPoints[ii].Y, OriginalPoints[ii].Z, 1 };
+                double[] transf = BLAS.Multiply(FinalMat, vec);
+                transf[0] /= transf[2];
+                transf[1] /= transf[2];
+                transf[2] /= transf[2];
                 ImagePoints[ii] = new ShapePoint2D(transf[0], transf[1], OriginalPoints[ii].isLED);
             }
         }

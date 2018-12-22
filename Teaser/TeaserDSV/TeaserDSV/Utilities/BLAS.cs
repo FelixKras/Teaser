@@ -229,7 +229,7 @@ namespace TeaserDSV.Utilities
             {
                 for (int j = 0; j < a.Length; j++)
                 {
-                    result[i] += a[j] * B[j, i];
+                    result[i] += a[j] * B[i,j];
                 }
             }
 

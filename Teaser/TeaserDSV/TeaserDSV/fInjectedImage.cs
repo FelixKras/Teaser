@@ -51,7 +51,7 @@ namespace TeaserDSV
         private bool mouseDown;
         private Point lastFormLocation;
 
-        
+
         private bool IsLedOn;
         private int m_color;
         private int m_direction;
@@ -99,7 +99,8 @@ namespace TeaserDSV
             }
             actRefresh = new Action(RefreshPicBox);
             this.FormBorderStyle = FormBorderStyle.None;
-            this.WindowState = FormWindowState.Maximized;
+            //this.WindowState = FormWindowState.Maximized;
+
 
         }
 
@@ -156,7 +157,7 @@ namespace TeaserDSV
             thrTargetDraw.Start();
 
             m_Body.OriginalPoints = LoadTargetFromFile(sExtPath + "TeaserShape.txt");
-            m_Body.CenterOfMassCartesian=new double[3]{0,0,0};
+
         }
 
         private ShapePoint3D[] LoadTargetFromFile(string externalTeasershapeTxt)
@@ -270,8 +271,8 @@ namespace TeaserDSV
         {
             if (m_Body.ImagePoints != null && m_Body.ImagePoints.Length > 0)
             {
-                PointF[] XandZ = GetPointsArr(m_Body.ImagePoints);
-                grphxDrawerTarget.FillPolygon(new SolidBrush(Color.DarkSlateGray), XandZ);
+                PointF[] XandZ = GetPointsArr(m_Body.ImagePoints,picBox.Size);
+                grphxDrawerTarget.FillPolygon(new SolidBrush(Color.Red), XandZ);
 
                 for (int ii = 0; ii < m_Body.OriginalPoints.Length; ii++)
                 {
@@ -286,15 +287,15 @@ namespace TeaserDSV
         private void DrawLedFromFile(Graphics grphxDrawerTarget, Body body)
         {
 
-            ledImage.MakeTransparent(Color.Black);
-            float FOVAngleInRad = (float)(cCalcer.CameraSettings.FOVangAz * cCalcer.CameraSettings.Deg2Rad);
-            float PixelsOnFPA = cCalcer.CameraSettings.LedSize * cCalcer.CameraSettings.SensorWidth /
-                                (float)(2 * body.CenterOfMassCartesian.Norm() * Math.Tan(FOVAngleInRad / 2));
+            //ledImage.MakeTransparent(Color.Black);
+            //float FOVAngleInRad = (float)(cCalcer.CameraSettings.FOVangAz * cCalcer.CameraSettings.Deg2Rad);
+            //float PixelsOnFPA = cCalcer.CameraSettings.LedSize * cCalcer.CameraSettings.SensorWidth /
+            //                    (float)(2 * body.CenterOfMassCartesian.Norm() * Math.Tan(FOVAngleInRad / 2));
 
 
 
-            float w = PixelsOnFPA;//ledImage.Width;//*fScale;
-            float h = PixelsOnFPA; //ledImage.Height;//*fScale;
+            //float w = PixelsOnFPA;//ledImage.Width;//*fScale;
+            //float h = PixelsOnFPA; //ledImage.Height;//*fScale;
             //Point leftUp = new Point((int)(positionOnScreen.X - w / 2), (int)(positionOnScreen.Y - h / 2));
             //
             //Rectangle destRect = new Rectangle(leftUp.X, leftUp.Y, (int)w, (int)h);
@@ -338,8 +339,8 @@ namespace TeaserDSV
         {
             SixMsg oSixMsg = (SixMsg)sender;
             conqSixMsgs.Enqueue(oSixMsg);
-
         }
+
         private void HandleMessages()
         {
             SixMsg oSixMsg;
@@ -355,10 +356,9 @@ namespace TeaserDSV
                         emitterOfSmokeLocation.Y = picBox.Height * emitterOfSmokeLocation.Y / cCalcer.CameraSettings.SensorHeight;
 
                         m_Body.RollAngle = oSixMsg.Object_Roll;
-                        m_Body.YawAngle=  oSixMsg.Object_Yaw;
+                        m_Body.YawAngle = oSixMsg.Object_Yaw;
                         m_Body.PitchAngle = oSixMsg.Object_Pitch;
-                        m_Body.CenterOfMassCartesian=new double[]{oSixMsg.Object_X, oSixMsg.Object_Y,oSixMsg.Object_Z};
-                        m_Body.ComputeProjection();
+                        m_Body.ComputeProjection(new double[] { oSixMsg.Object_X, oSixMsg.Object_Y, oSixMsg.Object_Z });
 
                         IsLedOn = (oSixMsg.Object_model == 1);
                         //BoundaryDetect();
@@ -393,12 +393,14 @@ namespace TeaserDSV
             }
             return result;
         }
-        private PointF[] GetPointsArr(ShapePoint2D[] shapePoints)
+        private PointF[] GetPointsArr(ShapePoint2D[] shapePoints,Size canvaSize)
         {
             PointF[] pnts = new PointF[shapePoints.Length];
             for (int ii = 0; ii < pnts.Length; ii++)
             {
-                pnts[ii] = new PointF((float)shapePoints[ii].point.X, (float)shapePoints[ii].point.Y);
+                var Xp = (float) shapePoints[ii].point.X / Camera.CameraSettings.SensorWidth * canvaSize.Width;
+                var Yp = (float) shapePoints[ii].point.Y / Camera.CameraSettings.SensorHeight * canvaSize.Height;
+                pnts[ii] = new PointF((float)Xp, (float)Yp);
 
             }
 
