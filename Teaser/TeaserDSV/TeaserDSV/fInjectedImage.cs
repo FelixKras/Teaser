@@ -252,7 +252,7 @@ namespace TeaserDSV
             grphxDrawer = Graphics.FromImage(copyBGImage);
 
 
-            RedrawParticles(grphxDrawer);
+            RedrawParticles(grphxDrawer,bgImage.Size);
 
 
             RedrawTarget(grphxDrawer, IsLedOn);
@@ -271,7 +271,7 @@ namespace TeaserDSV
         {
             if (m_Body.ImagePoints != null && m_Body.ImagePoints.Length > 0)
             {
-                PointF[] XandZ = GetPointsArr(m_Body.ImagePoints,picBox.Size);
+                PointF[] XandZ = GetPointsArr(m_Body.ImagePoints,bgImage.Size);
                 grphxDrawerTarget.FillPolygon(new SolidBrush(Color.Red), XandZ);
 
                 for (int ii = 0; ii < m_Body.OriginalPoints.Length; ii++)
@@ -303,7 +303,7 @@ namespace TeaserDSV
             //grphxDrawerTarget.DrawImage(ledImage, destRect, new Rectangle(0, 0, (int)w, (int)h), GraphicsUnit.Pixel);
         }
 
-        private void RedrawParticles(Graphics grphxDrawerParticles)
+        private void RedrawParticles(Graphics grphxDrawerParticles,Size canvasSize )
         {
 
             int alpha = 0;
@@ -316,9 +316,11 @@ namespace TeaserDSV
 
                     using (particleBrush = new SolidBrush(Color.FromArgb(alpha, m_color, m_color, m_color)))
                     {
-                        grphxDrawerParticles.FillEllipse(particleBrush,
-                            p.Location.X - SettingsHolder.Instance.ParticleSize / 2,
-                            p.Location.Y - SettingsHolder.Instance.ParticleSize / 2,
+                        var pX = (p.Location.X - SettingsHolder.Instance.ParticleSize / 2)
+                                 / Camera.CameraSettings.SensorWidth * canvasSize.Width;
+                        var pY = (p.Location.Y - SettingsHolder.Instance.ParticleSize / 2)
+                                 / Camera.CameraSettings.SensorHeight * canvasSize.Height;
+                        grphxDrawerParticles.FillEllipse(particleBrush,pX,pY,
                             SettingsHolder.Instance.ParticleSize, SettingsHolder.Instance.ParticleSize);
                     }
 
@@ -351,19 +353,23 @@ namespace TeaserDSV
                     if (conqSixMsgs.Count > 0)
                     {
                         conqSixMsgs.TryDequeue(out oSixMsg);
-                        emitterOfSmokeLocation = cCalcer.ObjectToCameraProjection(oSixMsg);
-                        emitterOfSmokeLocation.X = picBox.Width * emitterOfSmokeLocation.X / cCalcer.CameraSettings.SensorWidth;
-                        emitterOfSmokeLocation.Y = picBox.Height * emitterOfSmokeLocation.Y / cCalcer.CameraSettings.SensorHeight;
-
+                        
+                        
                         m_Body.RollAngle = oSixMsg.Object_Roll;
                         m_Body.YawAngle = oSixMsg.Object_Yaw;
                         m_Body.PitchAngle = oSixMsg.Object_Pitch;
                         m_Body.ComputeProjection(new double[] { oSixMsg.Object_X, oSixMsg.Object_Y, oSixMsg.Object_Z });
 
                         IsLedOn = (oSixMsg.Object_model == 1);
+                        
                         //BoundaryDetect();
                         if (oSixMsg.Smoke == 1)
                         {
+                            emitterOfSmokeLocation = m_Body.ImagePoints.First(d => d.isLED).point;
+                            
+                            emitterOfSmokeLocation.X = emitterOfSmokeLocation.X;
+                            emitterOfSmokeLocation.Y = emitterOfSmokeLocation.Y ;
+
                             CreateParticleEmitter(emitterOfSmokeLocation);
                         }
 
@@ -395,16 +401,17 @@ namespace TeaserDSV
         }
         private PointF[] GetPointsArr(ShapePoint2D[] shapePoints,Size canvaSize)
         {
-            PointF[] pnts = new PointF[shapePoints.Length];
-            for (int ii = 0; ii < pnts.Length; ii++)
+            List<PointF> pnts = new List<PointF>(shapePoints.Length);
+            
+            for (int ii = 0; ii < shapePoints.Length; ii++)
             {
-                var Xp = (float) shapePoints[ii].point.X / Camera.CameraSettings.SensorWidth * canvaSize.Width;
-                var Yp = (float) shapePoints[ii].point.Y / Camera.CameraSettings.SensorHeight * canvaSize.Height;
-                pnts[ii] = new PointF((float)Xp, (float)Yp);
-
+                var Xp = (float) (shapePoints[ii].point.X / Camera.CameraSettings.SensorWidth * canvaSize.Width);
+                var Yp = (float) (shapePoints[ii].point.Y / Camera.CameraSettings.SensorHeight * canvaSize.Height);
+                pnts.Add(new PointF((float)Xp, (float)Yp));
             }
 
-            return pnts;
+            List<PointF> convxHullpnts = ConvexHull.GetConvexHull(pnts);
+            return convxHullpnts.ToArray();
         }
 
         private void CloseThisForm()
