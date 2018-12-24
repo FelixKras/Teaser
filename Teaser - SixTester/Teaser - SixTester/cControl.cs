@@ -101,7 +101,7 @@ namespace TeaserSixTester
                         msg.Sender_ID = int.Parse(parts[1]);
                         msg.Target_ID = int.Parse(parts[2]);
                         msg.MSGCounter = int.Parse(parts[3]);
-                        msg.Time = int.Parse(parts[4]);
+                        msg.Time = double.Parse(parts[4]);
                         msg.Object_X = double.Parse(parts[5]);
                         msg.Object_Y = double.Parse(parts[6]);
                         msg.Object_Z = double.Parse(parts[7]);
@@ -236,7 +236,7 @@ namespace TeaserSixTester
         internal int Sender_ID;
         internal int Target_ID;
         internal int MSGCounter;
-        internal int Time;
+        internal double Time;
         internal double Object_X;
         internal double Object_Y;
         internal double Object_Z;

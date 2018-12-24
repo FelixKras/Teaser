@@ -34,12 +34,11 @@
             // 
             // picBox
             // 
-            this.picBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.picBox.Location = new System.Drawing.Point(13, 13);
+            this.picBox.Cursor = System.Windows.Forms.Cursors.Default;
+            this.picBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.picBox.Location = new System.Drawing.Point(0, 0);
             this.picBox.Name = "picBox";
-            this.picBox.Size = new System.Drawing.Size(602, 522);
+            this.picBox.Size = new System.Drawing.Size(932, 732);
             this.picBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.picBox.TabIndex = 0;
             this.picBox.TabStop = false;
@@ -53,7 +52,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(627, 547);
+            this.ClientSize = new System.Drawing.Size(932, 732);
             this.ControlBox = false;
             this.Controls.Add(this.picBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;

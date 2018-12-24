@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Drawing.Text;
 using System.Linq;
 using System.Text;
@@ -139,7 +140,26 @@ namespace TeaserDSV.Utilities
             return mat;
         }
     }
+    public class Scales
+    {
+        public static double ScaleX;
+        public static double ScaleY;
+        public static double[,] ScaleMat;
+        public static void SetScale(Size canvasSize)
+        {
+            ScaleX = (double)canvasSize.Width / Camera.CameraSettings.SensorWidth;
+            ScaleY = (double)canvasSize.Height / Camera.CameraSettings.SensorHeight;
+            ScaleMat = new double[4, 4]
+            {
+                {ScaleX, 0.0, 0.0, 0},
+                {0.0, ScaleY, 0.0, 0},
+                {0.0, 0.0, 1, 0},
+                {0.0, 0.0, 0, 1.0}
+            };
 
+        }
+        
+    }
     public class Camera
     {
         public static double[,] CreateProjectionMatrix()
@@ -181,7 +201,7 @@ namespace TeaserDSV.Utilities
              
              */
             #endregion Explanation
-
+            
             double[,] mat = new double[3, 4]
             {
                 {CameraSettings.FocalX, 0.0, CameraSettings.SensorWidth/2D,0},
@@ -201,13 +221,15 @@ namespace TeaserDSV.Utilities
             public const float LedSize = 0.10F; //10 cm
             public static readonly double FocalX;
             public static readonly double FocalY;
-
+         
             static CameraSettings()
             {
                 FocalX = SensorWidth/2D /  Math.Tan(Rotations.ToRadians(FOVangAz) / 2);
                 FocalY = SensorHeight/2D / Math.Tan(Rotations.ToRadians(FOVangEl) / 2);
-
+               
             }
+
+            
         }
 
     }

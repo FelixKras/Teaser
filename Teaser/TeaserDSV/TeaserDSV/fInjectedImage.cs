@@ -65,12 +65,13 @@ namespace TeaserDSV
         public fInjectedImage()
         {
             InitializeComponent();
-            SmokeColorInit();
+            
 
         }
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
+            SmokeColorInit();
             InitializePicBox();
             InitializeTimer();
             InitTarget();
@@ -88,10 +89,12 @@ namespace TeaserDSV
             picBox.Dock = DockStyle.Fill;
             bgImage = Image.FromFile(@"..\Images\bg2.jpg");
             picBox.Image = bgImage;
+            Scales.SetScale(bgImage.Size);
             Screen[] screens = Screen.AllScreens;
             if (screens.Length > 1)
             {
                 this.Location = screens[1].WorkingArea.Location;
+                this.WindowState = FormWindowState.Maximized;
             }
             else
             {
@@ -99,7 +102,7 @@ namespace TeaserDSV
             }
             actRefresh = new Action(RefreshPicBox);
             this.FormBorderStyle = FormBorderStyle.None;
-            //this.WindowState = FormWindowState.Maximized;
+            
 
 
         }
@@ -252,11 +255,10 @@ namespace TeaserDSV
             grphxDrawer = Graphics.FromImage(copyBGImage);
 
 
-            RedrawParticles(grphxDrawer,bgImage.Size);
-
-
+            RedrawParticles(grphxDrawer);
+            
             RedrawTarget(grphxDrawer, IsLedOn);
-            picBox.Image = copyBGImage.DeepClone();
+            picBox.Image = copyBGImage;
 
 
             //m_BlinkingLed = DateTime.Now.Second % 2 == 0 ? Color.Red : Color.White;
@@ -271,39 +273,28 @@ namespace TeaserDSV
         {
             if (m_Body.ImagePoints != null && m_Body.ImagePoints.Length > 0)
             {
-                PointF[] XandZ = GetPointsArr(m_Body.ImagePoints,bgImage.Size);
+                PointF[] XandZ = GetPointsArr(m_Body.ImagePoints);
                 grphxDrawerTarget.FillPolygon(new SolidBrush(Color.Red), XandZ);
-
-                for (int ii = 0; ii < m_Body.OriginalPoints.Length; ii++)
-                {
-                    if (m_Body.ImagePoints[ii].isLED && IsLedVisible)
-                    {
-                        DrawLedFromFile(grphxDrawerTarget, m_Body);
-                    }
-                }
+                DrawLedFromFile(grphxDrawerTarget, m_Body);
             }
         }
 
         private void DrawLedFromFile(Graphics grphxDrawerTarget, Body body)
         {
 
-            //ledImage.MakeTransparent(Color.Black);
-            //float FOVAngleInRad = (float)(cCalcer.CameraSettings.FOVangAz * cCalcer.CameraSettings.Deg2Rad);
-            //float PixelsOnFPA = cCalcer.CameraSettings.LedSize * cCalcer.CameraSettings.SensorWidth /
-            //                    (float)(2 * body.CenterOfMassCartesian.Norm() * Math.Tan(FOVAngleInRad / 2));
-
-
-
-            //float w = PixelsOnFPA;//ledImage.Width;//*fScale;
-            //float h = PixelsOnFPA; //ledImage.Height;//*fScale;
-            //Point leftUp = new Point((int)(positionOnScreen.X - w / 2), (int)(positionOnScreen.Y - h / 2));
-            //
-            //Rectangle destRect = new Rectangle(leftUp.X, leftUp.Y, (int)w, (int)h);
-            //
-            //grphxDrawerTarget.DrawImage(ledImage, destRect, new Rectangle(0, 0, (int)w, (int)h), GraphicsUnit.Pixel);
+            ledImage.MakeTransparent(Color.Black);
+            PointF LedPos = body.ImagePoints.FirstOrDefault(d => d.isLED).point;
+            SizeF LedSize = body.LedSize;
+            Point leftUp = new Point((int)(LedPos.X - LedSize.Width / 2), (int)(LedPos.Y - LedSize.Height / 2));
+            RectangleF destRect = new Rectangle(leftUp.X, leftUp.Y, (int)LedSize.Width, (int)LedSize.Height);
+            if (destRect.IntersectsWith(grphxDrawerTarget.ClipBounds))
+            {
+                grphxDrawerTarget.DrawImage(ledImage, destRect, new RectangleF(0, 0, destRect.Width, destRect.Height), GraphicsUnit.Pixel);
+            }
+            
         }
 
-        private void RedrawParticles(Graphics grphxDrawerParticles,Size canvasSize )
+        private void RedrawParticles(Graphics grphxDrawerParticles)
         {
 
             int alpha = 0;
@@ -316,12 +307,16 @@ namespace TeaserDSV
 
                     using (particleBrush = new SolidBrush(Color.FromArgb(alpha, m_color, m_color, m_color)))
                     {
-                        var pX = (p.Location.X - SettingsHolder.Instance.ParticleSize / 2)
-                                 / Camera.CameraSettings.SensorWidth * canvasSize.Width;
-                        var pY = (p.Location.Y - SettingsHolder.Instance.ParticleSize / 2)
-                                 / Camera.CameraSettings.SensorHeight * canvasSize.Height;
-                        grphxDrawerParticles.FillEllipse(particleBrush,pX,pY,
-                            SettingsHolder.Instance.ParticleSize, SettingsHolder.Instance.ParticleSize);
+                        var pX = (p.Location.X - SettingsHolder.Instance.ParticleSize / 2F);
+                                
+                        var pY = (p.Location.Y - SettingsHolder.Instance.ParticleSize / 2F);
+                        if (pX < grphxDrawerParticles.ClipBounds.Width && pX > 0 &&
+                            pY < grphxDrawerParticles.ClipBounds.Height && pY > 0)
+                        {
+                            grphxDrawerParticles.FillEllipse(particleBrush, pX, pY,
+                                SettingsHolder.Instance.ParticleSize, SettingsHolder.Instance.ParticleSize);
+                        }
+                        
                     }
 
                 }
@@ -399,15 +394,14 @@ namespace TeaserDSV
             }
             return result;
         }
-        private PointF[] GetPointsArr(ShapePoint2D[] shapePoints,Size canvaSize)
+        private PointF[] GetPointsArr(ShapePoint2D[] shapePoints)
         {
             List<PointF> pnts = new List<PointF>(shapePoints.Length);
             
             for (int ii = 0; ii < shapePoints.Length; ii++)
             {
-                var Xp = (float) (shapePoints[ii].point.X / Camera.CameraSettings.SensorWidth * canvaSize.Width);
-                var Yp = (float) (shapePoints[ii].point.Y / Camera.CameraSettings.SensorHeight * canvaSize.Height);
-                pnts.Add(new PointF((float)Xp, (float)Yp));
+               
+                pnts.Add(new PointF((float)shapePoints[ii].point.X, shapePoints[ii].point.Y));
             }
 
             List<PointF> convxHullpnts = ConvexHull.GetConvexHull(pnts);
@@ -447,6 +441,7 @@ namespace TeaserDSV
             {
                 thrTargetDraw.Abort();
             }
+            oListener.StopListening();
 
             base.OnClosing(e);
         }

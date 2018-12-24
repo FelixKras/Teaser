@@ -47,7 +47,7 @@
             this.toolStripSplitButton1});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(546, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(660, 25);
             this.toolStrip1.TabIndex = 2;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -60,20 +60,20 @@
             this.toolStripSplitButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripSplitButton1.Image")));
             this.toolStripSplitButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripSplitButton1.Name = "toolStripSplitButton1";
-            this.toolStripSplitButton1.Size = new System.Drawing.Size(39, 22);
+            this.toolStripSplitButton1.Size = new System.Drawing.Size(41, 22);
             this.toolStripSplitButton1.Text = "&File";
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // setIPToolStripMenuItem
             // 
             this.setIPToolStripMenuItem.Name = "setIPToolStripMenuItem";
-            this.setIPToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.setIPToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
             this.setIPToolStripMenuItem.Text = "&Set Comm settings";
             this.setIPToolStripMenuItem.Click += new System.EventHandler(this.setIPToolStripMenuItem_Click);
             // 
@@ -84,7 +84,7 @@
             this.listBox1.HorizontalScrollbar = true;
             this.listBox1.Location = new System.Drawing.Point(12, 163);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(522, 199);
+            this.listBox1.Size = new System.Drawing.Size(648, 199);
             this.listBox1.TabIndex = 4;
             // 
             // button1
@@ -106,7 +106,7 @@
             this.panel1.Controls.Add(this.button1);
             this.panel1.Location = new System.Drawing.Point(12, 38);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(522, 100);
+            this.panel1.Size = new System.Drawing.Size(636, 94);
             this.panel1.TabIndex = 1;
             // 
             // button2
@@ -123,7 +123,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(546, 415);
+            this.ClientSize = new System.Drawing.Size(660, 409);
             this.Controls.Add(this.listBox1);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.panel1);

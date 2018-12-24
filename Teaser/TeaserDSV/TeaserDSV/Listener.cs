@@ -75,7 +75,7 @@ namespace TeaserDSV
         public void StartListening()
         {
             // Create a UDP/IP socket.  
-
+            by1ReceivedMessage = new byte[Marshal.SizeOf(new SixMsg())];
             try
             {
                 listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -97,10 +97,9 @@ namespace TeaserDSV
             int iLenght = 0;
             while (!_StopListening)
             {
-                by1ReceivedMessage = new byte[Marshal.SizeOf(new SixMsg())];
-
                 if (listener.Available > 0)
                 {
+                    
                     iLenght = listener.Receive(by1ReceivedMessage);
                     if (iLenght == by1ReceivedMessage.Length)
                     {

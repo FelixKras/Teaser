@@ -27,6 +27,8 @@ namespace TeaserDSV.Model
 
         public double RollAngle { get; set; }
 
+        public SizeF LedSize; //LedSize in pixels
+
         public void ComputeProjection(double[] CenterOfMassCartesian)
         {   /*
             rotation_matrix = yaw_rotation_matrix * pitch_rotation_matrix * roll_rotation_matrix;
@@ -71,6 +73,18 @@ namespace TeaserDSV.Model
             //Testtransf[1] /= Testtransf[2];
             //Testtransf[2] /= Testtransf[2];
             #endregion
+
+
+            var computedLedWidth = (float) (Camera.CameraSettings.LedSize * Camera.CameraSettings.SensorHeight /
+                                            (Math.Sin(Camera.CameraSettings.FOVangAz / 2 * Camera.CameraSettings.Deg2Rad) *
+                                             CenterOfMassCartesian[2]) );
+            var computedLedHeight = (float)(Camera.CameraSettings.LedSize * Camera.CameraSettings.SensorWidth /
+                                            (Math.Sin(Camera.CameraSettings.FOVangEl / 2 * Camera.CameraSettings.Deg2Rad) *
+                                             CenterOfMassCartesian[2]) );
+            LedSize.Width = computedLedWidth <2? 2:computedLedWidth;
+            LedSize.Height= computedLedHeight < 2 ? 2 : computedLedHeight;
+
+
             for (int ii = 0; ii < OriginalPoints.Length; ii++)
             {
                 // Apply transformation to original position
@@ -79,7 +93,8 @@ namespace TeaserDSV.Model
                 transf[0] /= transf[2];
                 transf[1] /= transf[2];
                 transf[2] /= transf[2];
-                ImagePoints[ii] = new ShapePoint2D(transf[0], transf[1], OriginalPoints[ii].isLED);
+                double[] transfScaled = BLAS.Multiply(Scales.ScaleMat, transf);
+                ImagePoints[ii] = new ShapePoint2D(transfScaled[0], transfScaled[1], OriginalPoints[ii].isLED);
             }
         }
     }

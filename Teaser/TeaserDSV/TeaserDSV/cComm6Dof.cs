@@ -30,7 +30,7 @@ namespace TeaserDSV
         internal int Sender_ID;
         internal int Target_ID;
         internal int MSGCounter;
-        internal int Time;
+        internal double Time;
         internal double Object_X;
         internal double Object_Y;
         internal double Object_Z;
