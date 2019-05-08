@@ -42,16 +42,15 @@ namespace TeaserDSV
         private readonly AutoResetEvent areNewSixMessage = new AutoResetEvent(false);
 
         //private BackGroundPool oBackgPool = new BackGroundPool(sExtPath);
-        private skBackgroundPool oSkBackgPool = new skBackgroundPool(sExtPath);
+        private readonly skBackgroundPool oSkBackgPool = new skBackgroundPool(sExtPath);
         private BitmapPool oBMPPool;
 
         public double FrameTime { get; set; }
 
-        private Body m_Body = new Body();
+        private readonly Body m_Body = new Body();
 
         private bool bIsRunning { get; set; }
-        private bool bThreadStopped { get; set; }
-
+        
         private int LedPointIndex;
 
         private Graphics grphxDrawer;
@@ -67,13 +66,13 @@ namespace TeaserDSV
         private Timer recalcTimer;
 
         private const string sExtPath = @"..\..\External\";
-        private Bitmap ledImage = new Bitmap(sExtPath + "OnSep32x32_.png");
+        private readonly Bitmap ledImage = new Bitmap(sExtPath + "OnSep32x32_.png");
         private BitmapPool oBitmapPool;
         private SKImage skledImage;
 
         public EventHandler evUpdateClosed;
         private double dTime;
-        Stopwatch swMainLoopTimer = new Stopwatch();
+        readonly Stopwatch swMainLoopTimer = new Stopwatch();
         List<double> lstTimes = new List<double>();
         #endregion Private Members
 
@@ -101,6 +100,7 @@ namespace TeaserDSV
             thrPictureRedraw = new Thread(RedrawPicBox);
             thrPictureRedraw.Name = "Picturebox redraw";
             thrPictureRedraw.IsBackground = true;
+            thrPictureRedraw.Priority = ThreadPriority.Highest;
             thrPictureRedraw.Start();
         }
         private void InitializePicBox()
@@ -164,7 +164,7 @@ namespace TeaserDSV
                             #endregion previous implemetation with Graphics
 
                             // instead of creating Bitmap objects i am reusing them from pool
-                            Bitmap bmp = oBMPPool.GetObject(); 
+                            Bitmap bmp = oBMPPool.GetObject();
 
                             picBox.Image = ConvertToBitmap(skbitmap, bmp);
                         }
@@ -225,7 +225,6 @@ namespace TeaserDSV
         {
             conqSixMsgs = new ConcurrentQueue<SixMsg>();
             bIsRunning = true;
-            bThreadStopped = false;
             thrTargetDraw = new Thread(SmokeParticlesManager) { IsBackground = true, Name = "Smoke particle thread" };
             thrTargetDraw.Start();
             m_Body.OriginalPoints = LoadTargetFromFile(sExtPath + "TeaserShape.txt");
@@ -297,6 +296,7 @@ namespace TeaserDSV
 
                     lock (_lockObj)
                     {
+                        // calculate position and state of all particles
                         for (int ii = oSmoker.Particles.Count - 1; ii >= 0; ii--)
                         {
                             if (oSmoker.Particles[ii].PerformFrame())
@@ -310,10 +310,9 @@ namespace TeaserDSV
                         }
                         if (m_Body.IsSmokeOn)
                         {
-                            PointF emitterOfSmokeLocation = m_Body.ImagePoints[LedPointIndex].point;
-                            if (emitterOfSmokeLocation.X > 0 || emitterOfSmokeLocation.Y > 0)
+                            if (m_Body.ImagePoints[LedPointIndex].point.X > 0 || m_Body.ImagePoints[LedPointIndex].point.Y > 0)
                             {
-                                CreateParticleEmitter(emitterOfSmokeLocation);
+                                CreateParticleEmitter(m_Body.ImagePoints[LedPointIndex].point);
                             }
                         }
                     }
@@ -339,7 +338,6 @@ namespace TeaserDSV
             }
         }
 
-
         private void RedrawTarget(Graphics grphxDrawerTarget, bool IsLedVisible = false)
         {
             if (m_Body.ImagePoints != null && m_Body.ImagePoints.Length > 0)
@@ -364,11 +362,7 @@ namespace TeaserDSV
                     //skcanvas.DrawPoints(SKPointMode.Polygon,XandZ,skpaint);
                 }
             }
-
-
-
         }
-
 
         private void DrawLed(Graphics grphxDrawerTarget)
         {
@@ -403,32 +397,34 @@ namespace TeaserDSV
 
         private void DrawLed(SKBitmap grphxDrawerTarget)
         {
-
-            if (m_Body.ImagePoints != null && m_Body.ImagePoints.Length > 0)
+            if (m_Body.ImagePoints != null && m_Body.ImagePoints.Length > 0 && CheckIfLedIsVissible(grphxDrawerTarget))
             {
-                if (m_Body.IsLEDOn)
+                PointF LedPos = m_Body.ImagePoints[LedPointIndex].point;
+                SizeF LedSize = m_Body.LedSize;
+
+                Point leftUp = new Point((int)(LedPos.X - LedSize.Width / 2), (int)(LedPos.Y - LedSize.Height / 2));
+                SKRect destRect = new SKRect(leftUp.X, leftUp.Y, leftUp.X + LedSize.Width, leftUp.Y + LedSize.Height);
+
+                using (SKCanvas skcanvas = new SKCanvas(grphxDrawerTarget))
                 {
-                    PointF LedPos = m_Body.ImagePoints[LedPointIndex].point;
-                    SizeF LedSize = m_Body.LedSize;
-
-                    Point leftUp = new Point((int)(LedPos.X - LedSize.Width / 2), (int)(LedPos.Y - LedSize.Height / 2));
-                    SKRect destRect = new SKRect(leftUp.X, leftUp.Y, leftUp.X + LedSize.Width, leftUp.Y + LedSize.Height);
-
-                    using (SKCanvas skcanvas = new SKCanvas(grphxDrawerTarget))
+                    if (destRect.IntersectsWith(skcanvas.DeviceClipBounds) && destRect.Width < skcanvas.DeviceClipBounds.Width && destRect.Height < skcanvas.DeviceClipBounds.Height)
                     {
-                        if (destRect.IntersectsWith(skcanvas.DeviceClipBounds) && destRect.Width < skcanvas.DeviceClipBounds.Width && destRect.Height < skcanvas.DeviceClipBounds.Height)
-                        {
-                            skcanvas.DrawImage(skledImage, destRect);
-                        }
+                        skcanvas.DrawImage(skledImage, destRect);
                     }
                 }
             }
-
-
         }
+
+        private bool CheckIfLedIsVissible(SKBitmap grphxDrawerTarget)
+        {
+            return m_Body.IsLEDOn && m_Body.ImagePoints[LedPointIndex].point.X > 0 &&
+                   m_Body.ImagePoints[LedPointIndex].point.Y > 0 &&
+                   m_Body.ImagePoints[LedPointIndex].point.X < grphxDrawerTarget.Width &&
+                   m_Body.ImagePoints[LedPointIndex].point.Y < grphxDrawerTarget.Height;
+        }
+
         private void RedrawParticles(Graphics grphxDrawerParticles)
         {
-            Brush particleBrush;
             int alpha = 0;
 
             lock (_lockObj)
@@ -449,6 +445,7 @@ namespace TeaserDSV
 
                     p.GetColorToLife(ref alpha, ref m_color, m_direction);
 
+                    Brush particleBrush;
                     using (particleBrush = new SolidBrush(Color.FromArgb(alpha, m_color, m_color, m_color)))
                     {
                         grphxDrawerParticles.FillEllipse(particleBrush, pX, pY,
@@ -562,11 +559,15 @@ namespace TeaserDSV
         private SKPoint[] GetSkPointsArr(ShapePoint2D[] shapePoints)
         {
             List<SKPoint> pnts = new List<SKPoint>(shapePoints.Length);
-
             for (int ii = 0; ii < shapePoints.Length; ii++)
             {
-
-                pnts.Add(new SKPoint((float)shapePoints[ii].point.X, shapePoints[ii].point.Y));
+                if (shapePoints[ii].point.X > 0 &&
+                    shapePoints[ii].point.Y > 0 &&
+                    shapePoints[ii].point.X < picBox.Width &&
+                    shapePoints[ii].point.Y < picBox.Height)
+                {
+                    pnts.Add(new SKPoint((float)shapePoints[ii].point.X, (float)shapePoints[ii].point.Y));
+                }
             }
             List<SKPoint> convxHullpnts = ConvexHull.GetConvexHull(pnts);
             return convxHullpnts.ToArray();
@@ -774,12 +775,12 @@ namespace TeaserDSV
     }
     public class skBackgroundPool
     {
-        private ConcurrentQueue<SKBitmap> qBckgImagePool = new ConcurrentQueue<SKBitmap>();
-        private Thread thBackLoad;
-        private List<string> lstBackgImages;
+        private readonly ConcurrentQueue<SKBitmap> qBckgImagePool = new ConcurrentQueue<SKBitmap>();
+        private readonly Thread thBackLoad;
+        private readonly List<string> lstBackgImages;
         private bool cancelReq = false;
         private int iCurrentPosition;
-        private AutoResetEvent arReadImageEvent = new AutoResetEvent(true);
+        private readonly AutoResetEvent arReadImageEvent = new AutoResetEvent(true);
 
         public SKBitmap GetBackGroundFromPool()
         {

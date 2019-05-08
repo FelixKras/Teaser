@@ -16,7 +16,7 @@ namespace TeaserDSV
 
     internal static class Program
     {
-        public const string versionNumber = "1.1.1.0";
+        public const string versionNumber = "1.1.1.1";
         public const string version = "Teaser DSV: " + versionNumber;
         /// <summary>
         /// The main entry point for the application.
@@ -24,7 +24,7 @@ namespace TeaserDSV
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
+            //Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             try
             {
@@ -32,8 +32,7 @@ namespace TeaserDSV
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                throw;
+                LogWriter.Instance.WriteToLog(e.Message);
             }
 
 
