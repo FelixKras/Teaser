@@ -16,7 +16,7 @@ namespace TeaserDSV
 
     internal static class Program
     {
-        public const string versionNumber = "1.1.0.2";
+        public const string versionNumber = "1.1.1.0";
         public const string version = "Teaser DSV: " + versionNumber;
         /// <summary>
         /// The main entry point for the application.
@@ -35,8 +35,8 @@ namespace TeaserDSV
                 Console.WriteLine(e);
                 throw;
             }
-          
-            
+
+
         }
     }
 
@@ -62,11 +62,10 @@ namespace TeaserDSV
                             instance.port = "5555";
                             instance.chckfreq = 5000;
                             instance.timeout = 50000;
-                            instance.SendFreq = 10;
                             instance.LedSizeH = 1.1;
                             instance.LedSizeW = 1.1;
                             instance.ParticleSize = 4;
-                            instance.RedrawFreq = 15;
+                            instance.RedrawFreq = 30;
                             instance.ParticleNumber = 20;
                             instance.ParticleLifeTime = 3.0;
                             instance.ParticleDecceleration = 0.90F;
@@ -80,13 +79,13 @@ namespace TeaserDSV
 
         }
 
-       
+
 
         private SettingsHolder()
         {
 
         }
-        
+
 
         [Category("1. Communication Properties")]
         [DisplayName("Client UDP/IP address")]
@@ -122,13 +121,6 @@ namespace TeaserDSV
         {
             get; set;
         }
-
-        [Category("1. Communication Properties")]
-        [DisplayName("Message frequency")]
-        [ReadOnly(false)]
-        [Description("Time between sends of six messages [ms]")]
-        public int SendFreq { get; set; }
-
 
         [Category("2. View Properties")]
         [DisplayName("Redraw frequency")]
@@ -182,7 +174,7 @@ namespace TeaserDSV
         [ReadOnly(false)]
         [Description("Smoke color can be Black or White")]
         public SmokeColor enmSmokeColor { get; set; }
-       
+
 
         public void Dispose()
         {

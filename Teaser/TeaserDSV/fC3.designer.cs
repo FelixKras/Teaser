@@ -83,7 +83,6 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(203, 23);
             this.label1.TabIndex = 2;
-            this.label1.Text = "label1";
             // 
             // fC3
             // 

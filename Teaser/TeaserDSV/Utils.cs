@@ -19,29 +19,30 @@ namespace TeaserDSV
 {
     static class Utils
     {
+        static byte[] byTemp_ConvertToBitmap;
+
         public static Image ConvertToBitmap(this SKBitmap skbitmap, Bitmap Orig)
         {
-            if (byTemp == null)
+            if (byTemp_ConvertToBitmap == null)
             {
-                byTemp = new byte[skbitmap.ByteCount];
+                byTemp_ConvertToBitmap = new byte[skbitmap.ByteCount];
             }
 
             BitmapData bmpData = Orig.LockBits(new Rectangle(0, 0, Orig.Width, Orig.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
 
-            Marshal.Copy(skbitmap.GetPixels(), byTemp, 0, byTemp.Length);
-            Marshal.Copy(byTemp, 0, bmpData.Scan0, byTemp.Length);
+            Marshal.Copy(skbitmap.GetPixels(), byTemp_ConvertToBitmap, 0, byTemp_ConvertToBitmap.Length);
+            Marshal.Copy(byTemp_ConvertToBitmap, 0, bmpData.Scan0, byTemp_ConvertToBitmap.Length);
 
             Orig.UnlockBits(bmpData);
             return Orig;
         }
-
-        static byte[] byTemp;
+        
 
         public static Image ConvertToBitmap(this SKBitmap skbitmap)
         {
-            if (byTemp == null)
+            if (byTemp_ConvertToBitmap == null)
             {
-                byTemp = new byte[skbitmap.ByteCount];
+                byTemp_ConvertToBitmap = new byte[skbitmap.ByteCount];
             }
 
 
@@ -51,8 +52,8 @@ namespace TeaserDSV
             BitmapData bmpData = bmpTemp.LockBits(new Rectangle(0, 0, bmpTemp.Width, bmpTemp.Height),
                 ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
 
-            Marshal.Copy(skbitmap.GetPixels(), byTemp, 0, byTemp.Length);
-            Marshal.Copy(byTemp, 0, bmpData.Scan0, byTemp.Length);
+            Marshal.Copy(skbitmap.GetPixels(), byTemp_ConvertToBitmap, 0, byTemp_ConvertToBitmap.Length);
+            Marshal.Copy(byTemp_ConvertToBitmap, 0, bmpData.Scan0, byTemp_ConvertToBitmap.Length);
             bmpTemp.UnlockBits(bmpData);
             return bmpTemp;
         }

@@ -30,6 +30,7 @@ namespace TeaserDSV.Model
         public SizeF LedSize; //LedSize in pixels
 
         public bool IsLEDOn;
+        public bool IsSmokeOn;
         public void ComputeProjection(double[] CenterOfMassCartesian)
         {   /*
             rotation_matrix = yaw_rotation_matrix * pitch_rotation_matrix * roll_rotation_matrix;

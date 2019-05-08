@@ -60,7 +60,7 @@ namespace TeaserDSV
                         label1.Invoke(new MethodInvoker(
                             () =>
                             {
-                                label1.Text = (1000 / frmDisplay.dTime).ToString();
+                                label1.Text = frmDisplay.FrameTime.ToString("F2")+" ms per frame";
                             }));
                         
                     Thread.Sleep(5);

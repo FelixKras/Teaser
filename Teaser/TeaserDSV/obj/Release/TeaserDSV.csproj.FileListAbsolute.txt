@@ -1,0 +1,34 @@
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\TeaserDSV.exe.config
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\TeaserDSV.exe
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\TeaserDSV.pdb
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\Ookii.Dialogs.dll
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\Ookii.Dialogs.pdb
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.csprojResolveAssemblyReference.cache
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.fC3.resources
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.fInjectedImage.resources
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.fSettings.resources
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.Properties.Resources.resources
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.csproj.GenerateResource.Cache
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.exe
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\obj\Release\TeaserDSV.pdb
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\libSkiaSharp.dll
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\SkiaSharp.dll
+C:\Users\88felix\ProjectsFromTFS\Teaser\TeaserDSV\CompiledProducts\SkiaSharp.xml
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\libSkiaSharp.dll
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\TeaserDSV.exe.config
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\TeaserDSV.exe
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\TeaserDSV.pdb
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\Ookii.Dialogs.dll
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\SkiaSharp.dll
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\Ookii.Dialogs.pdb
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\CompiledProducts\SkiaSharp.xml
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.fC3.resources
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.fInjectedImage.resources
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.fSettings.resources
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.Properties.Resources.resources
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.csproj.GenerateResource.cache
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.csproj.CoreCompileInputs.cache
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.csproj.CopyComplete
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.exe
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.pdb
+C:\Users\Felix\Documents\Visual Studio 2017\Projects\Teaser\Teaser\TeaserDSV\obj\Release\TeaserDSV.csprojAssemblyReference.cache

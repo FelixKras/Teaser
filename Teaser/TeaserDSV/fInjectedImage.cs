@@ -33,16 +33,19 @@ namespace TeaserDSV
         private Thread thrPictureRedraw;
 
         private readonly cSmoker oSmoker = new cSmoker();
-        private int cParticleNumber;
-        private PointF emitterOfSmokeLocation;
+
         private readonly object _lockObj = new object();
         private readonly AutoResetEvent areCalcParticles = new AutoResetEvent(false);
+        private readonly AutoResetEvent areDrawParticles = new AutoResetEvent(false);
+
         private readonly AutoResetEvent areRefreshDrawing = new AutoResetEvent(false);
         private readonly AutoResetEvent areNewSixMessage = new AutoResetEvent(false);
+
         //private BackGroundPool oBackgPool = new BackGroundPool(sExtPath);
         private skBackgroundPool oSkBackgPool = new skBackgroundPool(sExtPath);
         private BitmapPool oBMPPool;
 
+        public double FrameTime { get; set; }
 
         private Body m_Body = new Body();
 
@@ -50,7 +53,6 @@ namespace TeaserDSV
         private bool bThreadStopped { get; set; }
 
         private int LedPointIndex;
-        private Brush particleBrush;
 
         private Graphics grphxDrawer;
         private Image bgImage;
@@ -58,7 +60,6 @@ namespace TeaserDSV
 
         private bool mouseDown;
         private Point lastFormLocation;
-
 
         private bool isLedOn;
         private int m_color;
@@ -70,10 +71,10 @@ namespace TeaserDSV
         private BitmapPool oBitmapPool;
         private SKImage skledImage;
 
-        BinaryFormatter formatter = new BinaryFormatter();
-        Stream stream = new MemoryStream();
         public EventHandler evUpdateClosed;
-
+        private double dTime;
+        Stopwatch swMainLoopTimer = new Stopwatch();
+        List<double> lstTimes = new List<double>();
         #endregion Private Members
 
 
@@ -84,10 +85,12 @@ namespace TeaserDSV
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
+            // Set defaults and init members
             SmokeColorInit();
             InitializePicBox();
             InitializeTimer();
             InitTarget();
+            // Start worker threads that wait for AutoReset event
             StartListening();
             InitSixDataHandler();
             InitRedraw();
@@ -95,36 +98,10 @@ namespace TeaserDSV
 
         private void InitRedraw()
         {
-            thrPictureRedraw = new Thread(RefreshPicBox);
+            thrPictureRedraw = new Thread(RedrawPicBox);
             thrPictureRedraw.Name = "Picturebox redraw";
             thrPictureRedraw.IsBackground = true;
             thrPictureRedraw.Start();
-        }
-
-        private void RefreshPicBox()
-        {
-            double dTime;
-            while (bIsRunning)
-            {
-
-                areRefreshDrawing.WaitOne();
-
-                if (!picBox.IsDisposed)
-                {
-
-                    //picBox.InvokeIfRequired(Invalidate);
-
-
-                    RedrawScene();
-
-
-                    //picBox.InvokeIfRequired(Update);
-
-                }
-
-
-            }
-
         }
         private void InitializePicBox()
         {
@@ -133,7 +110,7 @@ namespace TeaserDSV
             oBMPPool = new BitmapPool(bg.Width, bg.Height, 20);
 
             Bitmap bmp = oBMPPool.GetObject();
-            picBox.Image = bg.ConvertToBitmap(bmp);
+            picBox.Image = ConvertToBitmap(bg, bmp);
 
             Scales.SetScale(new Size(bg.Width, bg.Height));
             Screen[] screens = Screen.AllScreens;
@@ -154,11 +131,56 @@ namespace TeaserDSV
             skledImage = SKImage.FromBitmap(skledBitmap);
         }
 
+
+        private void RedrawPicBox()
+        {
+            while (bIsRunning)
+            {
+                areRefreshDrawing.WaitOne();
+                if (!picBox.IsDisposed)
+                {
+                    try
+                    {
+                        SKBitmap skbitmap = oSkBackgPool.GetBackGroundFromPool(); //Get background bitmap
+                        if (skbitmap != null)
+                        {
+                            lock (_lockObj)
+                            {
+                                swMainLoopTimer.Restart();
+
+                                RedrawParticles(skbitmap);
+                                RedrawTarget(skbitmap);
+                                DrawLed(skbitmap);
+
+                                dTime = (double)swMainLoopTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                                FrameTime = dTime;
+                            }
+
+                            #region previous implemetation with Graphics
+                            //grphxDrawer = Graphics.FromImage(copyBGImage);
+                            //RedrawParticles(grphxDrawer);
+                            //RedrawTarget(grphxDrawer, IsLedOn);
+                            //DrawLedFromFile(grphxDrawer);
+                            #endregion previous implemetation with Graphics
+
+                            // instead of creating Bitmap objects i am reusing them from pool
+                            Bitmap bmp = oBMPPool.GetObject(); 
+
+                            picBox.Image = ConvertToBitmap(skbitmap, bmp);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+
+                    }
+                }
+            }
+        }
+
         private void SmokeColorInit()
         {
-            Color tmp = Color.White;
-            //tmp = Color.FromName(ConfigurationManager.AppSettings["SmokeColor"]);
-            tmp = Color.FromName(SettingsHolder.Instance.enmSmokeColor.ToString());
+            Color tmp = Color.FromName(SettingsHolder.Instance.enmSmokeColor.ToString());
 
             if (tmp.IsNamedColor)
             {
@@ -188,7 +210,7 @@ namespace TeaserDSV
 
         private void InitSixDataHandler()
         {
-            thrSixDataHandle = new Thread(HandleMessages) { IsBackground = true, Name = "Six handler" };
+            thrSixDataHandle = new Thread(ComputeProjection) { IsBackground = true, Name = "Six handler" };
             thrSixDataHandle.Start();
 
         }
@@ -201,7 +223,6 @@ namespace TeaserDSV
         }
         private void InitTarget()
         {
-            cParticleNumber = SettingsHolder.Instance.ParticleNumber;
             conqSixMsgs = new ConcurrentQueue<SixMsg>();
             bIsRunning = true;
             bThreadStopped = false;
@@ -261,6 +282,8 @@ namespace TeaserDSV
             areCalcParticles.Set();
             // set redraw of all picture elements (background,smoke,led,target)
             areRefreshDrawing.Set();
+
+            areDrawParticles.Set(); // not in use yet
         }
 
         public void SmokeParticlesManager()
@@ -285,6 +308,14 @@ namespace TeaserDSV
                                 break;
                             }
                         }
+                        if (m_Body.IsSmokeOn)
+                        {
+                            PointF emitterOfSmokeLocation = m_Body.ImagePoints[LedPointIndex].point;
+                            if (emitterOfSmokeLocation.X > 0 || emitterOfSmokeLocation.Y > 0)
+                            {
+                                CreateParticleEmitter(emitterOfSmokeLocation);
+                            }
+                        }
                     }
                 }
             }
@@ -299,49 +330,15 @@ namespace TeaserDSV
         {
             lock (_lockObj)
             {
-                for (int ii = 0; ii < cParticleNumber; ii++)
+                int localLength = SettingsHolder.Instance.ParticleNumber;
+                for (int ii = 0; ii < localLength; ii++)
                 {
                     Particle createparticle = oSmoker.GetFromPool(emitPoint, SettingsHolder.Instance.ParticlesSpeed);
                     oSmoker.Particles.Add(createparticle);
                 }
             }
         }
-        public double dTime;
-        List<double> lstTimes=new List<double>();
-        private void RedrawScene()
-        {
-            try
-            {
-                
-                SKBitmap skbitmap = oSkBackgPool.GetBackGroundFromPool();
-                if (skbitmap != null)
-                {
-                    lock (_lockObj)
-                    {
-                        dTime=Utils.TimeThis(()=>{
-                        RedrawParticles(skbitmap);
-                        RedrawTarget(skbitmap);
-                        DrawLed(skbitmap);
-                        });
-                        
-                        //lstTimes.Add(dTime);
 
-                    }
-
-                    //grphxDrawer = Graphics.FromImage(copyBGImage);
-                    //RedrawParticles(grphxDrawer);
-                    //RedrawTarget(grphxDrawer, IsLedOn);
-                    //DrawLedFromFile(grphxDrawer);
-                    Bitmap bmp = oBMPPool.GetObject();
-                    picBox.Image = skbitmap.ConvertToBitmap(bmp);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-
-            }
-        }
 
         private void RedrawTarget(Graphics grphxDrawerTarget, bool IsLedVisible = false)
         {
@@ -431,7 +428,7 @@ namespace TeaserDSV
         }
         private void RedrawParticles(Graphics grphxDrawerParticles)
         {
-
+            Brush particleBrush;
             int alpha = 0;
 
             lock (_lockObj)
@@ -467,31 +464,29 @@ namespace TeaserDSV
 
             int alpha = 0;
 
-            lock (_lockObj)
+            for (var ii = 0; ii < oSmoker.Particles.Count; ii++)
             {
-                for (var ii = 0; ii < oSmoker.Particles.Count; ii++)
+                Particle p = oSmoker.Particles[ii];
+                p.GetColorToLife(ref alpha, ref m_color, m_direction);
+
+                using (SKPaint skpaint = new SKPaint { Color = new SKColor((byte)m_color, (byte)m_color, (byte)m_color, (byte)alpha) })
                 {
-                    Particle p = oSmoker.Particles[ii];
-                    p.GetColorToLife(ref alpha, ref m_color, m_direction);
+                    var pX = (p.Location.X - SettingsHolder.Instance.ParticleSize / 2F);
 
-                    using (SKPaint skpaint = new SKPaint { Color = new SKColor((byte)m_color, (byte)m_color, (byte)m_color, (byte)alpha) })
+                    var pY = (p.Location.Y - SettingsHolder.Instance.ParticleSize / 2F);
+                    if (pX < grphxDrawerParticles.Width && pX > 0 &&
+                        pY < grphxDrawerParticles.Height && pY > 0)
                     {
-                        var pX = (p.Location.X - SettingsHolder.Instance.ParticleSize / 2F);
-
-                        var pY = (p.Location.Y - SettingsHolder.Instance.ParticleSize / 2F);
-                        if (pX < grphxDrawerParticles.Width && pX > 0 &&
-                            pY < grphxDrawerParticles.Height && pY > 0)
+                        using (SKCanvas skcanvas = new SKCanvas(grphxDrawerParticles))
                         {
-                            using (SKCanvas skcanvas = new SKCanvas(grphxDrawerParticles))
-                            {
-                                skcanvas.DrawOval(pX, pY, SettingsHolder.Instance.ParticleSize, SettingsHolder.Instance.ParticleSize, skpaint);
-                            }
+                            skcanvas.DrawOval(pX, pY, SettingsHolder.Instance.ParticleSize, SettingsHolder.Instance.ParticleSize, skpaint);
                         }
                     }
-
-
                 }
+
+
             }
+
         }
 
         private void StartListening()
@@ -506,16 +501,18 @@ namespace TeaserDSV
         {
             SixMsg oSixMsg = (SixMsg)sender;
             conqSixMsgs.Enqueue(oSixMsg);
+            areNewSixMessage.Set();
         }
 
-        private void HandleMessages()
+        private void ComputeProjection()
         {
 
             while (bIsRunning)
             {
                 try
                 {
-                    areNewSixMessage.WaitOne(TimeSpan.FromMilliseconds(1));
+                    areNewSixMessage.WaitOne();
+
                     if (conqSixMsgs.Count > 0)
                     {
                         SixMsg oSixMsg;
@@ -526,21 +523,13 @@ namespace TeaserDSV
                             m_Body.RollAngle = oSixMsg.Object_Roll;
                             m_Body.YawAngle = oSixMsg.Object_Yaw;
                             m_Body.PitchAngle = oSixMsg.Object_Pitch;
-                            m_Body.IsLEDOn = oSixMsg.Object_model == 1;
+                            m_Body.IsLEDOn = (oSixMsg.Object_model == 1);
+                            m_Body.IsSmokeOn = (oSixMsg.Smoke == 1);
                             m_Body.ComputeProjection(new double[] { oSixMsg.Object_X, oSixMsg.Object_Y, oSixMsg.Object_Z });
                         }
 
 
                         //BoundaryDetect();
-                        if (oSixMsg.Smoke == 1)
-                        {
-                            emitterOfSmokeLocation = m_Body.ImagePoints[LedPointIndex].point;
-                            if (emitterOfSmokeLocation.X > 0 || emitterOfSmokeLocation.Y > 0)
-                            {
-                                CreateParticleEmitter(emitterOfSmokeLocation);
-                            }
-                        }
-
 
                     }
                     else
@@ -556,7 +545,6 @@ namespace TeaserDSV
 
             }
         }
-
 
         private PointF[] GetPointsArr(ShapePoint2D[] shapePoints)
         {
@@ -606,7 +594,7 @@ namespace TeaserDSV
             this.Close();
         }
 #warning For debug
-        private void BoundaryDetect()
+        private void BoundaryDetect(PointF emitterOfSmokeLocation)
         {
             if (emitterOfSmokeLocation.X > picBox.Width)
             {
@@ -622,6 +610,37 @@ namespace TeaserDSV
             }
         }
 
+        unsafe struct copystruct128
+        {
+            fixed long l[128];
+        }
+        public unsafe void MemmoryCopy128b(IntPtr Destination, IntPtr Source, int Length)
+        {
+            // no need to pin the dest,src variables with 'fixed' because they are meant for a locked bitmaps anyway
+
+            copystruct128* src = (copystruct128*)Source;
+            copystruct128* dest = (copystruct128*)Destination;
+
+            for (int ii = 0; ii < Length / sizeof(copystruct128); ii++)
+            {
+                *dest++ = *src++;
+
+            }
+        }
+
+        public Image ConvertToBitmap(SKBitmap Source, Bitmap Destination)
+        {
+
+            BitmapData bmpData = Destination.LockBits(new Rectangle(0, 0, Destination.Width, Destination.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+            MemmoryCopy128b(bmpData.Scan0, Source.GetPixels(), Source.ByteCount);
+
+            //Marshal.Copy(Source.GetPixels(), byTemp_ConvertToBitmap, 0, byTemp_ConvertToBitmap.Length);
+            //Marshal.Copy(byTemp_ConvertToBitmap, 0, bmpData.Scan0, byTemp_ConvertToBitmap.Length);
+
+            Destination.UnlockBits(bmpData);
+            return Destination;
+        }
         #region From event handlers
 
         protected override void OnClosing(CancelEventArgs e)
@@ -833,6 +852,8 @@ namespace TeaserDSV
             arReadImageEvent.Set();
         }
     }
+
+
     interface IDrawable
     {
 
