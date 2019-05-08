@@ -69,7 +69,18 @@ namespace TeaserSixTester
                 action();
             }
         }
-
+        public static void BeginInvokeIfRequired(this ISynchronizeInvoke obj, MethodInvoker action)
+        {
+            if (obj.InvokeRequired)
+            {
+                object[] args = new object[0];
+                obj.BeginInvoke(action, args);
+            }
+            else
+            {
+                action();
+            }
+        }
 
         public class CRC32
         {

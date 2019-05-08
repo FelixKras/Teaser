@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Configuration;
 using System.Drawing.Design;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Ookii.Dialogs;
+
 
 namespace TeaserSixTester
 {
@@ -187,6 +183,104 @@ namespace TeaserSixTester
         }
     }
 
+
+    public class SettingsForManualSend : IDisposable
+    {
+
+        private static SettingsForManualSend instance;
+        private static object syncroot = new Object();
+
+        public static SettingsForManualSend Instance
+        {
+            get
+            {
+                // If the instance is null then create one
+                if (instance == null)
+                {
+                    lock (syncroot)
+                    {
+                        if (instance == null)
+                        {
+                            instance = new SettingsForManualSend();
+                            instance.Six_obj_Pitch = 0;
+                            instance.Six_obj_Roll = 0;
+                            instance.Six_obj_Yaw = Math.PI/2;
+                            instance.Six_obj_X = 50;
+                            instance.Six_obj_Y = 0;
+                            instance.Six_obj_Z = 0;
+                            instance.Six_obj_Smoke = 1;
+                            instance.Six_obj_blink = 10;
+                        }
+                    }
+                }
+                return instance;
+            }
+
+        }
+
+
+        private SettingsForManualSend()
+        {
+
+        }
+
+        [Category("2. Data values")]
+        [DisplayName("X Launch grid position")]
+        [ReadOnly(false)]
+        [Description("X Launch grid position")]
+        public double Six_obj_X { get; set; }
+        
+        [Category("2. Data values")]
+        [DisplayName("Y Launch grid position")]
+        [ReadOnly(false)]
+        [Description("Y Launch grid position")]
+        public double Six_obj_Y { get; set; }
+
+        [Category("2. Data values")]
+        [DisplayName("Z Launch grid position")]
+        [ReadOnly(false)]
+        [Description("Z Launch grid position")]
+        public double Six_obj_Z { get; set; }
+
+        [Category("2. Data values")]
+        [DisplayName("Roll")]
+        [ReadOnly(false)]
+        [Description("Roll [radian]")]
+        public double Six_obj_Roll { get; set; }
+
+        [Category("2. Data values")]
+        [DisplayName("Pitch")]
+        [ReadOnly(false)]
+        [Description("Pitch [radian]")]
+        public double Six_obj_Pitch { get; set; }
+
+        [Category("2. Data values")]
+        [DisplayName("Yaw")]
+        [ReadOnly(false)]
+        [Description("Yaw [radian]")]
+        public double Six_obj_Yaw { get; set; }
+
+        [Category("2. Data values")]
+        [DisplayName("Smoke")]
+        [ReadOnly(false)]
+        [Description("Smoke on/off")]
+        public int Six_obj_Smoke { get; set; }
+
+        [Category("2. Data values")]
+        [DisplayName("Blink freq")]
+        [ReadOnly(false)]
+        [Description("Blink frequency [hz] (i.e. every n messages")]
+        public int Six_obj_blink { get; set; }
+
+
+        public void Dispose()
+        {
+            lock (syncroot)
+            {
+                instance = null;
+            }
+        }
+    }
     public class myFileBrowser : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -19,12 +19,18 @@ namespace TeaserSixTester
     {
 
         //ScriptSettings oScriptSettings;
-        cCommunication oComm;
-        List<SixMsg> lstSixMsgs = new List<SixMsg>();
+        private cCommunication oComm;
+        private List<SixMsg> lstSixMsgs = new List<SixMsg>();
         public EventHandler evReceivedResponse;
         public EventHandler evSentMessage;
-
-
+        private Common.CRC32 crc = new Common.CRC32();
+        private FileSource oFileSource = new FileSource();
+        private ManualSource oManSource = new ManualSource();
+        private IMsgSource isource;
+        private Thread thrdMessageSend;
+        private AutoResetEvent areMessageSend = new AutoResetEvent(false);
+        private bool bStopSending = false;
+        private bool bKillSwitch;
         public cControl()
         {
             oComm = new cCommunication();
@@ -67,7 +73,7 @@ namespace TeaserSixTester
             bool bRes = false;
             try
             {
-                bRes = new FileInfo(file).Exists && Parse(file);
+                bRes = new FileInfo(file).Exists && oFileSource.Parse(file);
             }
             catch (Exception e)
             {
@@ -76,55 +82,7 @@ namespace TeaserSixTester
             return bRes;
         }
 
-        private bool Parse(string file)
-        {
 
-            bool bRes = false;
-            try
-            {
-                Regex rgx = new Regex(@"^[^#].*", RegexOptions.Multiline);
-                MatchCollection matches;
-                using (FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (StreamReader sw = new StreamReader(fs))
-                {
-                    string sAll = sw.ReadToEnd();
-                    //oScriptSettings.Checksum = sAll.ComputeCRC();
-                    matches = rgx.Matches(sAll);
-                }
-                foreach (Match match in matches)
-                {
-                    string[] parts = match.Value.Split(',');
-                    if (parts.Length == 15)
-                    {
-                        var msg = new SixMsg();
-                        msg.Header = int.Parse(parts[0], NumberStyles.HexNumber, CultureInfo.CurrentCulture);
-                        msg.Sender_ID = int.Parse(parts[1]);
-                        msg.Target_ID = int.Parse(parts[2]);
-                        msg.MSGCounter = int.Parse(parts[3]);
-                        msg.Time = double.Parse(parts[4]);
-                        msg.Object_X = double.Parse(parts[5]);
-                        msg.Object_Y = double.Parse(parts[6]);
-                        msg.Object_Z = double.Parse(parts[7]);
-                        msg.Object_Roll = double.Parse(parts[8]);
-                        msg.Object_Pitch = double.Parse(parts[9]);
-                        msg.Object_Yaw = double.Parse(parts[10]);
-                        msg.Smoke = int.Parse(parts[11]);
-                        msg.Object_model = int.Parse(parts[12]);
-                        msg.Spare = int.Parse(parts[13]);
-                        msg.CheckSum = int.Parse(parts[14], NumberStyles.HexNumber, CultureInfo.CurrentCulture);
-                        lstSixMsgs.Add(
-                            msg);
-                    }
-                }
-                bRes = true;
-
-            }
-            catch (Exception e)
-            {
-                bRes = false;
-            }
-            return bRes;
-        }
 
         internal bool TryConnect()
         {
@@ -135,8 +93,7 @@ namespace TeaserSixTester
         {
             bool bRes = oComm.isConnected();
             //bool bRes = oComm.TCPSendMessage(Encoding.ASCII.GetBytes(Common.TerminationString));
-
-
+            
             if (!bRes && shouldReconnect)
             {
                 TryConnect();
@@ -162,24 +119,13 @@ namespace TeaserSixTester
             }
         }
 
-
-
-
-        Task tskMessageSend;
-
-        AutoResetEvent areMessageSend = new AutoResetEvent(false);
-
-        private bool bStopSending = false;
-        private bool bKillSwitch;
-
-
         private void SendSingleMessage(SixMsg oSixMsg)
         {
             //byte[] by1SixMsg_ = lstSixMsg.MakeByteArrayMarshal();
             byte[] by1SixMsg = oSixMsg.MakeByteArray();
-            
+
             Buffer.BlockCopy(new byte[4], 0, by1SixMsg, by1SixMsg.Length - sizeof(int), sizeof(int));
-            Common.CRC32 crc = new Common.CRC32();
+
             uint uiCheckSum = crc.ComputeCheckSum(by1SixMsg, Common.CRC32.CSMethod.Checksum);
             Buffer.BlockCopy(BitConverter.GetBytes(uiCheckSum), 0, by1SixMsg, by1SixMsg.Length - sizeof(int), sizeof(int));
 
@@ -201,36 +147,55 @@ namespace TeaserSixTester
             return false;
         }
 
-        public void StartMessageTask()
+        public void StartMessageSendingLoop()
         {
 
-            tskMessageSend = new Task(
+            thrdMessageSend = new Thread(
                 () =>
                 {
+                    Stopwatch sw = Stopwatch.StartNew();
                     while (!bKillSwitch)
                     {
                         areMessageSend.WaitOne();
-                        for (int i = 0; i < lstSixMsgs.Count; i++)
+                        for (int i = 0; (i < isource.GetCount())||isource.GetCount()==-1; i++)
                         {
+                            sw.Restart();
                             areMessageSend.WaitOne(TimeSpan.FromMilliseconds(SettingsHolder.Instance.SendFreq));
-                            SendSingleMessage(lstSixMsgs[i]);
-                            evSentMessage.Raise(lstSixMsgs[i].ToString());
+                            SixMsg omsg = isource.GetMessage();
+                            SendSingleMessage(omsg);
+                            sw.Stop();
+                            double d = (double)sw.ElapsedTicks / Stopwatch.Frequency * 1000;
+                            evSentMessage.Raise(omsg.ToString());
 
                             if (bStopSending)
                             {
                                 break;
                             }
                         }
+                        isource.Reset();
                     }
 
 
                 });
+            thrdMessageSend.IsBackground = true;
+            thrdMessageSend.Name = "UDP six msg sender";
+            thrdMessageSend.Start();
+        }
 
-            tskMessageSend.Start();
+        public void SetActiveSource(bool isFileSource)
+        {
+            if (isFileSource)
+            {
+                isource = oFileSource;
+            }
+            else
+            {
+                isource = oManSource;
+            }
         }
     }
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    internal struct SixMsg
+    public struct SixMsg
     {
         internal int Header;
         internal int Sender_ID;
@@ -247,14 +212,14 @@ namespace TeaserSixTester
         internal int Object_model;
         internal int Spare;
         internal int CheckSum;
-       
+
 
         internal byte[] MakeByteArrayMarshal()
         {
             int msgSize = Marshal.SizeOf(typeof(SixMsg));
             byte[] by1Result = new byte[msgSize];
-          
-            
+
+
 
             try
             {
@@ -308,4 +273,129 @@ namespace TeaserSixTester
         }
     }
 
+    public class FileSource : IMsgSource
+    {
+        private List<SixMsg> lstSixMsgs;
+        private int iCurrentPos = 0;
+        public FileSource()
+        {
+            lstSixMsgs = new List<SixMsg>();
+        }
+        public SixMsg GetMessage()
+        {
+            SixMsg oMsg = lstSixMsgs[iCurrentPos];
+            iCurrentPos++;
+            iCurrentPos = iCurrentPos % (lstSixMsgs.Count);
+            return oMsg;
+        }
+
+        public int GetCount()
+        {
+            return lstSixMsgs.Count;
+        }
+
+        public void Reset()
+        {
+            iCurrentPos = 0;
+        }
+
+        public bool Parse(string file)
+        {
+            lstSixMsgs.Clear();
+            bool bRes = false;
+            try
+            {
+                Regex rgxBody = new Regex(@"^[^#].*", RegexOptions.Multiline);
+                Regex rgxHeader = new Regex(@"^#.*", RegexOptions.Multiline);
+                MatchCollection matches;
+                int iNumOfColumns = 0;
+                using (FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (StreamReader sw = new StreamReader(fs))
+                {
+                    string sAll = sw.ReadToEnd();
+                    //oScriptSettings.Checksum = sAll.ComputeCRC();
+                    matches = rgxBody.Matches(sAll);
+                    Match matchesHeader = rgxHeader.Match(sAll);
+                    int iColsFound = matchesHeader.Value
+                        .Split(new char[] { ',', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                    if (iColsFound > 0)
+                    {
+                        iNumOfColumns = iColsFound;
+                    }
+                }
+                foreach (Match match in matches)
+                {
+                    string[] parts = match.Value.Split(new char[] { ',', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == iNumOfColumns)
+                    {
+                        var msg = new SixMsg();
+                        msg.Header = int.Parse(parts[0], NumberStyles.HexNumber, CultureInfo.CurrentCulture);
+                        msg.Sender_ID = (int)double.Parse(parts[1]);
+                        msg.Target_ID = (int)double.Parse(parts[2]);
+                        msg.MSGCounter = (int)double.Parse(parts[3]);
+                        msg.Time = double.Parse(parts[4]);
+                        msg.Object_X = double.Parse(parts[5]);
+                        msg.Object_Y = double.Parse(parts[6]);
+                        msg.Object_Z = double.Parse(parts[7]);
+                        msg.Object_Roll = double.Parse(parts[8]);
+                        msg.Object_Pitch = double.Parse(parts[9]);
+                        msg.Object_Yaw = double.Parse(parts[10]);
+                        msg.Smoke = (int)double.Parse(parts[11]);
+                        msg.Object_model = (int)double.Parse(parts[12]);
+                        msg.Spare = (int)double.Parse(parts[13]);
+                        msg.CheckSum = int.Parse(parts[14], NumberStyles.HexNumber, CultureInfo.CurrentCulture);
+                        lstSixMsgs.Add(msg);
+                        bRes = true;
+                    }
+                    else
+                    {
+                        bRes = false;
+                    }
+                }
+
+
+            }
+            catch (Exception e)
+            {
+                bRes = false;
+            }
+            return bRes;
+        }
+    }
+
+    public class ManualSource : IMsgSource
+    {
+        private int iCountPos ;
+        public SixMsg GetMessage()
+        {
+            SixMsg oMsg = new SixMsg();
+            oMsg.Header = 0xAA55;
+            oMsg.MSGCounter = iCountPos++;
+            oMsg.Object_X = SettingsForManualSend.Instance.Six_obj_X;
+            oMsg.Object_Y = SettingsForManualSend.Instance.Six_obj_Y;
+            oMsg.Object_Y = SettingsForManualSend.Instance.Six_obj_Z;
+            oMsg.Object_Pitch = SettingsForManualSend.Instance.Six_obj_Pitch;
+            oMsg.Object_Roll = SettingsForManualSend.Instance.Six_obj_Roll;
+            oMsg.Object_Yaw = SettingsForManualSend.Instance.Six_obj_Yaw;
+            oMsg.Object_model = iCountPos % SettingsForManualSend.Instance.Six_obj_blink;
+            oMsg.Smoke = SettingsForManualSend.Instance.Six_obj_Smoke;
+            return oMsg;
+        }
+
+        public int GetCount()
+        {
+            return -1;
+        }
+
+        public void Reset()
+        {
+            iCountPos = -1;
+        }
+    }
+    interface IMsgSource
+    {
+        SixMsg GetMessage();
+        int GetCount();
+        void Reset();
+    }
 }
