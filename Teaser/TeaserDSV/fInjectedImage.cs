@@ -131,7 +131,12 @@ namespace TeaserDSV
             skledImage = SKImage.FromBitmap(skledBitmap);
         }
 
-
+        private void InitForm()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            SetStyle(ControlStyles.UserPaint, true);
+        }
         private void RedrawPicBox()
         {
             while (bIsRunning)
