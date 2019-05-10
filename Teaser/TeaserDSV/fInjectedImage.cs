@@ -85,6 +85,7 @@ namespace TeaserDSV
         {
             base.OnLoad(e);
             // Set defaults and init members
+            InitForm();
             SmokeColorInit();
             InitializePicBox();
             InitializeTimer();
@@ -93,6 +94,11 @@ namespace TeaserDSV
             StartListening();
             InitSixDataHandler();
             InitRedraw();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            
         }
 
         private void InitRedraw()
