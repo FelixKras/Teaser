@@ -12,6 +12,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
+using System.Windows.Media.TextFormatting;
 using SkiaSharp;
 using TeaserDSV.Model;
 
@@ -168,6 +169,37 @@ namespace TeaserDSV
             }
 
         }
+
+        public class FixedList : List<double> 
+        {
+            private int _maxLength;
+            public FixedList(int MaxLength)
+            {
+                _maxLength = MaxLength;
+            }
+
+            public new void Add(double d)
+            {
+                base.Add(d);
+                if(this.Count>=_maxLength)
+                {
+                    this.RemoveAt(0);
+                }
+
+            }
+            public double GetAverage()
+            {
+                double sum = 0;
+                for (int ii = 0; ii < this.Count; ii++)
+                {
+                    sum += this[ii];
+                }
+
+                int n = (this.Count < _maxLength) ? this.Count : _maxLength;
+                return sum / n;
+            }
+        }
+
 
         /// <summary>
         /// Time a method in milliseconds

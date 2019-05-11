@@ -45,12 +45,10 @@ namespace TeaserDSV
         private readonly skBackgroundPool oSkBackgPool = new skBackgroundPool(sExtPath);
         private BitmapPool oBMPPool;
 
-        public double FrameTime { get; set; }
-
-        private readonly Body m_Body = new Body();
+       private readonly Body m_Body = new Body();
 
         private bool bIsRunning { get; set; }
-        
+
         private int LedPointIndex;
 
         private Graphics grphxDrawer;
@@ -71,8 +69,17 @@ namespace TeaserDSV
         private SKImage skledImage;
 
         public EventHandler evUpdateClosed;
-        private double dTime;
+
+        
         readonly Stopwatch swMainLoopTimer = new Stopwatch();
+        readonly Stopwatch swCommTimer = new Stopwatch();
+        readonly Stopwatch swProjTimer = new Stopwatch();
+        readonly Stopwatch swSmokeTimer = new Stopwatch();
+
+        public double FrameRenderTime { get; set; }
+        public double CommReceiveTime { get; set; }
+        public double ProjCalcTime { get; set; }
+        public double SmokeCalcTime { get; set; }
         List<double> lstTimes = new List<double>();
         #endregion Private Members
 
@@ -85,9 +92,9 @@ namespace TeaserDSV
         {
             base.OnLoad(e);
             // Set defaults and init members
-            InitForm();
+
             SmokeColorInit();
-            InitializePicBox();
+            InitCanvasForm();
             InitializeTimer();
             InitTarget();
             // Start worker threads that wait for AutoReset event
@@ -98,7 +105,7 @@ namespace TeaserDSV
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            
+
         }
 
         private void InitRedraw()
@@ -109,14 +116,19 @@ namespace TeaserDSV
             thrPictureRedraw.Priority = ThreadPriority.Highest;
             thrPictureRedraw.Start();
         }
-        private void InitializePicBox()
+        private void InitCanvasForm()
         {
-            picBox.Dock = DockStyle.Fill;
+            SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            SetStyle(ControlStyles.UserPaint, true);
+            this.BackgroundImageLayout = ImageLayout.Stretch;
+
+            //picBox.Dock = DockStyle.Fill;
             SKBitmap bg = oSkBackgPool.GetBackGroundFromPool();
             oBMPPool = new BitmapPool(bg.Width, bg.Height, 20);
 
             Bitmap bmp = oBMPPool.GetObject();
-            picBox.Image = ConvertToBitmap(bg, bmp);
+            this.BackgroundImage = ConvertToBitmap(bg, bmp);
 
             Scales.SetScale(new Size(bg.Width, bg.Height));
             Screen[] screens = Screen.AllScreens;
@@ -137,55 +149,50 @@ namespace TeaserDSV
             skledImage = SKImage.FromBitmap(skledBitmap);
         }
 
-        private void InitForm()
-        {
-            SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-            SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            SetStyle(ControlStyles.UserPaint, true);
-        }
         private void RedrawPicBox()
         {
+            double dTime = 0;
             while (bIsRunning)
             {
                 areRefreshDrawing.WaitOne();
-                if (!picBox.IsDisposed)
+                //if (!picBox.IsDisposed)
+                //{
+                try
                 {
-                    try
+                    SKBitmap skbitmap = oSkBackgPool.GetBackGroundFromPool(); //Get background bitmap
+                    if (skbitmap != null)
                     {
-                        SKBitmap skbitmap = oSkBackgPool.GetBackGroundFromPool(); //Get background bitmap
-                        if (skbitmap != null)
+                        lock (_lockObj)
                         {
-                            lock (_lockObj)
-                            {
-                                swMainLoopTimer.Restart();
+                            swMainLoopTimer.Restart();
 
-                                RedrawParticles(skbitmap);
-                                RedrawTarget(skbitmap);
-                                DrawLed(skbitmap);
+                            RedrawParticles(skbitmap);
+                            RedrawTarget(skbitmap);
+                            DrawLed(skbitmap);
 
-                                dTime = (double)swMainLoopTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
-                                FrameTime = dTime;
-                            }
-
-                            #region previous implemetation with Graphics
-                            //grphxDrawer = Graphics.FromImage(copyBGImage);
-                            //RedrawParticles(grphxDrawer);
-                            //RedrawTarget(grphxDrawer, IsLedOn);
-                            //DrawLedFromFile(grphxDrawer);
-                            #endregion previous implemetation with Graphics
-
-                            // instead of creating Bitmap objects i am reusing them from pool
-                            Bitmap bmp = oBMPPool.GetObject();
-
-                            picBox.Image = ConvertToBitmap(skbitmap, bmp);
+                            dTime = (double)swMainLoopTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                            FrameRenderTime = dTime;
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
 
+                        #region previous implemetation with Graphics
+                        //grphxDrawer = Graphics.FromImage(copyBGImage);
+                        //RedrawParticles(grphxDrawer);
+                        //RedrawTarget(grphxDrawer, IsLedOn);
+                        //DrawLedFromFile(grphxDrawer);
+                        #endregion previous implemetation with Graphics
+
+                        // instead of creating Bitmap objects i am reusing them from pool
+                        Bitmap bmp = oBMPPool.GetObject();
+
+                        this.BackgroundImage = ConvertToBitmap(skbitmap, bmp);
                     }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+
+                }
+                //}
             }
         }
 
@@ -298,13 +305,13 @@ namespace TeaserDSV
 
         public void SmokeParticlesManager()
         {
-
+            double dTime = 0;
             try
             {
                 while (bIsRunning)
                 {
                     areCalcParticles.WaitOne();
-
+                    swSmokeTimer.Restart();
                     lock (_lockObj)
                     {
                         // calculate position and state of all particles
@@ -327,6 +334,8 @@ namespace TeaserDSV
                             }
                         }
                     }
+                    dTime = (double)swSmokeTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                    SmokeCalcTime = dTime;
                 }
             }
             catch (ThreadAbortException ex)
@@ -396,12 +405,7 @@ namespace TeaserDSV
                         }
                         break;
                     }
-
-
                 }
-
-
-
             }
 
         }
@@ -491,10 +495,7 @@ namespace TeaserDSV
                         }
                     }
                 }
-
-
             }
-
         }
 
         private void StartListening()
@@ -507,19 +508,24 @@ namespace TeaserDSV
 
         private void OnMessageReceived(object sender, EventArgs eventArgs)
         {
+            double dTime=(double)swCommTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+            CommReceiveTime = dTime;
             SixMsg oSixMsg = (SixMsg)sender;
             conqSixMsgs.Enqueue(oSixMsg);
             areNewSixMessage.Set();
+            swCommTimer.Restart();
         }
 
         private void ComputeProjection()
         {
-
+            double dTime = 0;
             while (bIsRunning)
             {
                 try
                 {
+                    
                     areNewSixMessage.WaitOne();
+                    swProjTimer.Restart();
 
                     if (conqSixMsgs.Count > 0)
                     {
@@ -536,14 +542,14 @@ namespace TeaserDSV
                             m_Body.ComputeProjection(new double[] { oSixMsg.Object_X, oSixMsg.Object_Y, oSixMsg.Object_Z });
                         }
 
-
                         //BoundaryDetect();
-
                     }
                     else
                     {
                         continue;
                     }
+                    dTime=(double)swProjTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                    ProjCalcTime = dTime;
                 }
                 catch (Exception e)
                 {
@@ -574,8 +580,8 @@ namespace TeaserDSV
             {
                 if (shapePoints[ii].point.X > 0 &&
                     shapePoints[ii].point.Y > 0 &&
-                    shapePoints[ii].point.X < picBox.Width &&
-                    shapePoints[ii].point.Y < picBox.Height)
+                    shapePoints[ii].point.X < this.Width &&
+                    shapePoints[ii].point.Y < this.Height)
                 {
                     pnts.Add(new SKPoint((float)shapePoints[ii].point.X, (float)shapePoints[ii].point.Y));
                 }
@@ -608,10 +614,10 @@ namespace TeaserDSV
 #warning For debug
         private void BoundaryDetect(PointF emitterOfSmokeLocation)
         {
-            if (emitterOfSmokeLocation.X > picBox.Width)
+            if (emitterOfSmokeLocation.X > this.Width)
             {
             }
-            else if (emitterOfSmokeLocation.Y > picBox.Height)
+            else if (emitterOfSmokeLocation.Y > this.Height)
             {
             }
             else if (emitterOfSmokeLocation.X < 0)
