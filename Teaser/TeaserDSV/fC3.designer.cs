@@ -67,7 +67,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(43, 269);
+            this.button1.Location = new System.Drawing.Point(40, 371);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(302, 106);
             this.button1.TabIndex = 1;
@@ -78,16 +78,17 @@
             // propertyGrid1
             // 
             this.propertyGrid1.CommandsDisabledLinkColor = System.Drawing.Color.Black;
-            this.propertyGrid1.Location = new System.Drawing.Point(43, 51);
+            this.propertyGrid1.Dock = System.Windows.Forms.DockStyle.Top;
+            this.propertyGrid1.Location = new System.Drawing.Point(0, 25);
             this.propertyGrid1.Name = "propertyGrid1";
-            this.propertyGrid1.Size = new System.Drawing.Size(302, 184);
+            this.propertyGrid1.Size = new System.Drawing.Size(408, 340);
             this.propertyGrid1.TabIndex = 3;
             // 
             // fC3
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(408, 410);
+            this.ClientSize = new System.Drawing.Size(408, 489);
             this.Controls.Add(this.propertyGrid1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.toolStrip1);

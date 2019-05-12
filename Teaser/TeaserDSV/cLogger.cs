@@ -69,6 +69,7 @@ namespace TeaserDSV
                 FlushLog();
                 waitHandle.Close();
                 stopHandle.Close();
+                tskWriter=null;
             }
             catch
             {

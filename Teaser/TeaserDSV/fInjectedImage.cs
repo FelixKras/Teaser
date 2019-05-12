@@ -45,7 +45,7 @@ namespace TeaserDSV
         private readonly skBackgroundPool oSkBackgPool = new skBackgroundPool(sExtPath);
         private BitmapPool oBMPPool;
 
-       private readonly Body m_Body = new Body();
+        private readonly Body m_Body = new Body();
 
         private bool bIsRunning { get; set; }
 
@@ -70,16 +70,23 @@ namespace TeaserDSV
 
         public EventHandler evUpdateClosed;
 
-        
+
         readonly Stopwatch swMainLoopTimer = new Stopwatch();
         readonly Stopwatch swCommTimer = new Stopwatch();
         readonly Stopwatch swProjTimer = new Stopwatch();
         readonly Stopwatch swSmokeTimer = new Stopwatch();
+        readonly Stopwatch swRedrawTimer = new Stopwatch();
+
 
         public double FrameRenderTime { get; set; }
         public double CommReceiveTime { get; set; }
         public double ProjCalcTime { get; set; }
         public double SmokeCalcTime { get; set; }
+
+        public double ParticlesRedrawTime { get; set; }
+        public double TargetRedrawTime { get; set; }
+        public double LedRedrawTime { get; set; }
+
         List<double> lstTimes = new List<double>();
         #endregion Private Members
 
@@ -152,6 +159,7 @@ namespace TeaserDSV
         private void RedrawPicBox()
         {
             double dTime = 0;
+            double dTimeDraw = 0;
             while (bIsRunning)
             {
                 areRefreshDrawing.WaitOne();
@@ -159,19 +167,26 @@ namespace TeaserDSV
                 //{
                 try
                 {
+                    
+                    swMainLoopTimer.Restart();
                     SKBitmap skbitmap = oSkBackgPool.GetBackGroundFromPool(); //Get background bitmap
                     if (skbitmap != null)
                     {
                         lock (_lockObj)
                         {
-                            swMainLoopTimer.Restart();
-
+                            swRedrawTimer.Restart();
                             RedrawParticles(skbitmap);
+                            dTimeDraw=(double)swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                            ParticlesRedrawTime=dTimeDraw;
+                            swRedrawTimer.Restart();
                             RedrawTarget(skbitmap);
+                            dTimeDraw=(double)swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                            TargetRedrawTime=dTimeDraw;
+                             swRedrawTimer.Restart();
                             DrawLed(skbitmap);
+                            dTimeDraw=(double)swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                            LedRedrawTime=dTimeDraw;
 
-                            dTime = (double)swMainLoopTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
-                            FrameRenderTime = dTime;
                         }
 
                         #region previous implemetation with Graphics
@@ -185,6 +200,8 @@ namespace TeaserDSV
                         Bitmap bmp = oBMPPool.GetObject();
 
                         this.BackgroundImage = ConvertToBitmap(skbitmap, bmp);
+                        dTime = (double)swMainLoopTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                        FrameRenderTime = dTime;
                     }
                 }
                 catch (Exception e)
@@ -508,7 +525,7 @@ namespace TeaserDSV
 
         private void OnMessageReceived(object sender, EventArgs eventArgs)
         {
-            double dTime=(double)swCommTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+            double dTime = (double)swCommTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
             CommReceiveTime = dTime;
             SixMsg oSixMsg = (SixMsg)sender;
             conqSixMsgs.Enqueue(oSixMsg);
@@ -523,7 +540,7 @@ namespace TeaserDSV
             {
                 try
                 {
-                    
+
                     areNewSixMessage.WaitOne();
                     swProjTimer.Restart();
 
@@ -548,7 +565,7 @@ namespace TeaserDSV
                     {
                         continue;
                     }
-                    dTime=(double)swProjTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+                    dTime = (double)swProjTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
                     ProjCalcTime = dTime;
                 }
                 catch (Exception e)
@@ -806,10 +823,17 @@ namespace TeaserDSV
             arReadImageEvent.Set();
             return result;
         }
-
+        byte[][] bgImages;
         public skBackgroundPool(string sExtPath)
         {
             lstBackgImages = new List<string>(Directory.GetFiles(sExtPath + "\\Frames\\", "*.jpg"));
+            bgImages=new byte[lstBackgImages.Count][];
+
+            for (int ii = 0; ii < bgImages.Count(); ii++)
+            {
+                bgImages[ii]=File.ReadAllBytes(lstBackgImages[ii]);
+            }
+
             if (thBackLoad == null)
             {
                 thBackLoad = new Thread(LoadImagesAsync);
@@ -833,8 +857,10 @@ namespace TeaserDSV
                 arReadImageEvent.WaitOne();
                 while (qBckgImagePool.Count < 10)
                 {
-                    skBitmap = SKBitmap.Decode(lstBackgImages[iCurrentPosition]);
+                    Stopwatch sw = Stopwatch.StartNew();
+                    skBitmap = SKBitmap.Decode(bgImages[iCurrentPosition]);
                     qBckgImagePool.Enqueue(skBitmap);
+                    sw.Stop();
 
                     bIsIncreasing = ChooseDirectionOfFilesRead(bIsIncreasing);
 

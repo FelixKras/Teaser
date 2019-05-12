@@ -64,6 +64,9 @@ namespace TeaserDSV
                     Utils.FixedList smokeLoopList = new Utils.FixedList(iNumOfSamples);
                     Utils.FixedList projLoopList = new Utils.FixedList(iNumOfSamples);
 
+                    Utils.FixedList smokeDrawList = new Utils.FixedList(iNumOfSamples);
+                    Utils.FixedList targetDrawList = new Utils.FixedList(iNumOfSamples);
+                    Utils.FixedList ledDrawList = new Utils.FixedList(iNumOfSamples);
 
                     while (IsStarted)
                     {
@@ -71,26 +74,34 @@ namespace TeaserDSV
                         commLoopList.Add(frmDisplay.CommReceiveTime);
                         smokeLoopList.Add(frmDisplay.SmokeCalcTime);
                         projLoopList.Add(frmDisplay.ProjCalcTime);
+                        smokeDrawList.Add(frmDisplay.ParticlesRedrawTime);
+                        targetDrawList.Add(frmDisplay.TargetRedrawTime);
+                        ledDrawList.Add(frmDisplay.LedRedrawTime);
 
                         double avgRender = renderLoopList.GetAverage();
                         double avgComm = commLoopList.GetAverage();
                         double avgSmoke = smokeLoopList.GetAverage();
                         double avgProj = projLoopList.GetAverage();
 
+                        double avgsmokdraw = smokeDrawList.GetAverage();
+                        double avgtargetdraw = targetDrawList.GetAverage();
+                        double avgleddraw = ledDrawList.GetAverage();
+
+                        if (frmDisplay.FrameRenderTime >30 && frmDisplay.FrameRenderTime > avgRender * 1.2)
+                        {
+                        }
+
                         propHolder._commTime = avgComm;
                         propHolder._projTime = avgProj;
                         propHolder._renderTime = avgRender;
                         propHolder._smokeTime = avgSmoke;
+                        propHolder._particlesTime=avgsmokdraw;
+                        propHolder._targetTime=avgtargetdraw;
+                        propHolder._ledTime=avgleddraw;
 
                         propertyGrid1.Invoke(new MethodInvoker(
                             () => { propertyGrid1.Refresh(); }));
 
-                        //label1.Invoke(new MethodInvoker(
-                        //    () =>
-                        //    {
-                        //        label1.Text = avgRender.ToString("F2")+" ms per frame";
-                        //        label2.Text =avgComm.ToString("F2")+" ms per comm msg";
-                        //    }));
 
                         Thread.Sleep((int)SettingsHolder.Instance.RedrawFreq / 2);
                     }
@@ -117,6 +128,9 @@ namespace TeaserDSV
         public double _commTime;
         public double _projTime;
         public double _smokeTime;
+        public double _particlesTime;
+        public double _targetTime;
+        public double _ledTime;
 
 
         [Category("Timing Properties")]
@@ -152,7 +166,35 @@ namespace TeaserDSV
         [Description("How many milisecconds it took to calculate smoke (average)")]
         public string smokeTime
         {
-            get {return _smokeTime.ToString("F2"); }
+            get { return _smokeTime.ToString("F2"); }
+        }
+
+        
+        [Category("Timing Properties")]
+        [DisplayName("Smoke redraw time [ms]")]
+        [ReadOnly(true)]
+        [Description("How many milisecconds it took to draw smoke (average)")]
+        public string ParticlesTime
+        {
+            get { return _particlesTime.ToString("F2"); }
+        }
+        
+        [Category("Timing Properties")]
+        [DisplayName("Target redraw time [ms]")]
+        [ReadOnly(true)]
+        [Description("How many milisecconds it took to draw target (average)")]
+        public string TargetTime
+        {
+            get { return _targetTime.ToString("F2"); }
+        }
+        
+        [Category("Timing Properties")]
+        [DisplayName("Led redraw time [ms]")]
+        [ReadOnly(true)]
+        [Description("How many milisecconds it took to draw the LED (average)")]
+        public string LedTime
+        {
+            get { return _ledTime.ToString("F2"); }
         }
     }
 }

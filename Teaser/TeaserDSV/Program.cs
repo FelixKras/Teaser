@@ -16,7 +16,7 @@ namespace TeaserDSV
 
     internal static class Program
     {
-        public const string versionNumber = "1.1.1.2";
+        public const string versionNumber = "1.1.1.3";
         public const string version = "Teaser DSV: " + versionNumber;
         /// <summary>
         /// The main entry point for the application.
