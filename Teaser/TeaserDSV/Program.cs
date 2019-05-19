@@ -64,7 +64,7 @@ namespace TeaserDSV
                             instance.LedSizeH = 1.1;
                             instance.LedSizeW = 1.1;
                             instance.ParticleSize = 4;
-                            instance.RedrawFreq = 30;
+                            instance.RedrawFreq = 10;
                             instance.ParticleNumber = 20;
                             instance.ParticleLifeTime = 3.0;
                             instance.ParticleDecceleration = 0.90F;

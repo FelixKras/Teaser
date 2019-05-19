@@ -17,6 +17,7 @@ namespace TeaserDSV
         public fC3()
         {
             InitializeComponent();
+            //Application.Idle += Application_Idle;
             this.Text = Program.version;
         }
 
@@ -58,6 +59,7 @@ namespace TeaserDSV
             Thread thr = new Thread(
                 () =>
                 {
+                    AutoResetEvent areTimer = new AutoResetEvent(false);
                     int iNumOfSamples = 20;
                     Utils.FixedList renderLoopList = new Utils.FixedList(iNumOfSamples);
                     Utils.FixedList commLoopList = new Utils.FixedList(iNumOfSamples);
@@ -70,6 +72,7 @@ namespace TeaserDSV
 
                     while (IsStarted)
                     {
+                        areTimer.WaitOne(TimeSpan.FromMilliseconds(10*SettingsHolder.Instance.RedrawFreq));
                         renderLoopList.Add(frmDisplay.FrameRenderTime);
                         commLoopList.Add(frmDisplay.CommReceiveTime);
                         smokeLoopList.Add(frmDisplay.SmokeCalcTime);
@@ -87,29 +90,33 @@ namespace TeaserDSV
                         double avgtargetdraw = targetDrawList.GetAverage();
                         double avgleddraw = ledDrawList.GetAverage();
 
-                        if (frmDisplay.FrameRenderTime >30 && frmDisplay.FrameRenderTime > avgRender * 1.2)
-                        {
-                        }
 
                         propHolder._commTime = avgComm;
                         propHolder._projTime = avgProj;
                         propHolder._renderTime = avgRender;
                         propHolder._smokeTime = avgSmoke;
-                        propHolder._particlesTime=avgsmokdraw;
-                        propHolder._targetTime=avgtargetdraw;
-                        propHolder._ledTime=avgleddraw;
+                        propHolder._particlesTime = avgsmokdraw;
+                        propHolder._targetTime = avgtargetdraw;
+                        propHolder._ledTime = avgleddraw;
 
-                        propertyGrid1.Invoke(new MethodInvoker(
-                            () => { propertyGrid1.Refresh(); }));
-
-
-                        Thread.Sleep((int)SettingsHolder.Instance.RedrawFreq / 2);
+                        this.Invalidate();
+                        //propertyGrid1.Invoke(new MethodInvoker(() => { propertyGrid1.Refresh(); }));
                     }
 
 
                 });
             thr.Start();
         }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            propertyGrid1.Refresh();
+        }
+        private void Application_Idle(Object sender, EventArgs e)
+        {
+            propertyGrid1.Refresh();
+        }
+
         private void OnChildFormClose(object sender, EventArgs e)
         {
             button1.Text = "Start";
@@ -122,6 +129,14 @@ namespace TeaserDSV
         }
     }
 
+    public class MyPropertyGridView : PropertyGrid
+    {
+        protected override void OnPaint(PaintEventArgs pevent)
+        {
+            base.OnPaint(pevent);
+            //this.Refresh();
+        }
+    }
     public class PropertyHolder
     {
         public double _renderTime;
@@ -169,7 +184,7 @@ namespace TeaserDSV
             get { return _smokeTime.ToString("F2"); }
         }
 
-        
+
         [Category("Timing Properties")]
         [DisplayName("Smoke redraw time [ms]")]
         [ReadOnly(true)]
@@ -178,7 +193,7 @@ namespace TeaserDSV
         {
             get { return _particlesTime.ToString("F2"); }
         }
-        
+
         [Category("Timing Properties")]
         [DisplayName("Target redraw time [ms]")]
         [ReadOnly(true)]
@@ -187,7 +202,7 @@ namespace TeaserDSV
         {
             get { return _targetTime.ToString("F2"); }
         }
-        
+
         [Category("Timing Properties")]
         [DisplayName("Led redraw time [ms]")]
         [ReadOnly(true)]
