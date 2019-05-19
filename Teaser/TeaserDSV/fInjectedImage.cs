@@ -2,16 +2,12 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
-using System.Timers;
 using System.Windows.Forms;
 using SkiaSharp;
 using TeaserDSV.Model;
@@ -113,12 +109,21 @@ namespace TeaserDSV
         protected override void OnPaint(PaintEventArgs e)
         {
             //base.OnPaint(e);
+            double dTimeDrawParticles;
+            double dTimeDrawTarget;
+            double dTimeDrawLed;
             double dTimeDraw;
 
             swRedrawTimer.Restart();
             RedrawParticles(e.Graphics);
+            dTimeDrawParticles=(double)swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+            ParticlesRedrawTime = dTimeDrawParticles;
             RedrawTarget(e.Graphics);
+            dTimeDrawTarget = (double) swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+            TargetRedrawTime = dTimeDrawTarget - dTimeDrawParticles;
             DrawLed(e.Graphics);
+            dTimeDrawLed=(double)swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
+            LedRedrawTime = dTimeDrawLed - dTimeDrawTarget;
             dTimeDraw = (double)swRedrawTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
             FrameRenderTime = dTimeDraw;
 
@@ -550,6 +555,7 @@ namespace TeaserDSV
             {
                 try
                 {
+                    areCalcParticles.Set();
                     areNewSixMessage.WaitOne();
                     swProjTimer.Restart();
 
