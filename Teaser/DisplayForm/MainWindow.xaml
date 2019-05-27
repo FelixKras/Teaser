@@ -1,0 +1,22 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DisplayForm"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" x:Class="DisplayForm.MainWindow"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="474.889" Width="494.358">
+    <Grid Margin="0,0,53.761,0">
+        <Button Margin="26.862,334.512,235.359,34.846">
+            <Button.FontWeight>
+                <FontWeight>Bold</FontWeight>
+            </Button.FontWeight>
+            <WrapPanel>
+                <TextBlock><Run Text="Run"/></TextBlock>
+            </WrapPanel>
+        </Button>
+        <xctk:PropertyGrid HorizontalAlignment="Left" Margin="26.862,19.796,0,0" VerticalAlignment="Top" Width="334.388"/>
+    </Grid>
+
+</Window>
