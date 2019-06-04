@@ -16,8 +16,9 @@ namespace TeaserDSV
 
     internal static class Program
     {
-        public const string versionNumber = "1.1.2.0";
+        public const string versionNumber = "1.1.2.1";
         public const string version = "Teaser DSV: " + versionNumber;
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -34,14 +35,11 @@ namespace TeaserDSV
             {
                 LogWriter.Instance.WriteToLog(e.Message);
             }
-
-
         }
     }
 
     public class SettingsHolder : IDisposable
     {
-
         private static SettingsHolder instance;
         private static object syncroot = new Object();
 
@@ -70,19 +68,19 @@ namespace TeaserDSV
                             instance.ParticleDecceleration = 0.90F;
                             instance.ParticlesSpeed = 3;
                             instance.enmSmokeColor = SmokeColor.White;
+                            instance.WindowWidth = 960;
+                            instance.WindowHeight= 540;
                         }
                     }
                 }
+
                 return instance;
             }
-
         }
-
 
 
         private SettingsHolder()
         {
-
         }
 
 
@@ -90,42 +88,32 @@ namespace TeaserDSV
         [DisplayName("Client UDP/IP address")]
         [ReadOnly(false)]
         [Description("Listener to the UDP communication IP address")]
-        public string ipAddress
-        {
-            get; set;
-        }
+        public string ipAddress { get; set; }
+
         [Category("1. Communication Properties")]
         [DisplayName("Client UDP/IP port")]
         [ReadOnly(false)]
         [Description("Listener to the UDP communication IP port")]
-        public string port
-        {
-            get; set;
-        }
+        public string port { get; set; }
 
         [Category("1. Communication Properties")]
         [DisplayName("Comm timeout")]
         [ReadOnly(false)]
         [Description("timeout for udp sending in secconds")]
-        public uint timeout
-        {
-            get; set;
-        }
+        public uint timeout { get; set; }
 
         [Category("1. Communication Properties")]
         [DisplayName("Comm check freq")]
         [ReadOnly(false)]
         [Description("Comm check frequency")]
-        public uint chckfreq
-        {
-            get; set;
-        }
+        public uint chckfreq { get; set; }
 
         [Category("2. View Properties")]
         [DisplayName("Redraw frequency")]
         [ReadOnly(false)]
         [Description("Time between redraws of a target")]
         public double RedrawFreq { get; set; }
+
         [Category("2. View Properties")]
         [DisplayName("Particle number")]
         [ReadOnly(false)]
@@ -174,6 +162,18 @@ namespace TeaserDSV
         [Description("Smoke color can be Black or White")]
         public SmokeColor enmSmokeColor { get; set; }
 
+        [Category("2. View Properties")]
+        [DisplayName("Display window width")]
+        [ReadOnly(false)]
+        [Description("Display window width [pixels]")]
+        public int WindowWidth { get; set; }
+
+        [Category("2. View Properties")]
+        [DisplayName("Display window height")]
+        [ReadOnly(false)]
+        [Description("Display window height [pixels]")]
+        public int WindowHeight { get; set; }
+
 
         public void Dispose()
         {
@@ -195,7 +195,9 @@ namespace TeaserDSV
                 using (Ookii.Dialogs.VistaOpenFileDialog ofd = new VistaOpenFileDialog())
                 {
                     ofd.Multiselect = false;
-                    string[] s1Descript = context.PropertyDescriptor.Description.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] s1Descript =
+                        context.PropertyDescriptor.Description.Split(new char[] {' '},
+                            StringSplitOptions.RemoveEmptyEntries);
 
                     ofd.Filter = @"|*.csv";
 
@@ -204,11 +206,9 @@ namespace TeaserDSV
                         return ofd.FileName;
                     }
                 }
-                return value;
 
+                return value;
             }
         }
     }
-
-
 }

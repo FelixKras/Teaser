@@ -147,8 +147,14 @@ namespace TeaserDSV
                 areRefreshDrawing.WaitOne(timeout);
                 try
                 {
-                    this.Invalidate();
+                    //this.Invalidate(new Region(new Rectangle((int) m_Body.ImagePoints[LedPointIndex].point.X - 50,(int) m_Body.ImagePoints[LedPointIndex].point.Y - 50, 100, 100)), false);
+                    
+                    this.Invalidate(
+                        new Region(new Rectangle((int) m_Body.ImagePoints[LedPointIndex].point.X - 200,
+                            (int) m_Body.ImagePoints[LedPointIndex].point.Y - 200, 400, 400)), true);
+
                 }
+                
 
                 catch (Exception e)
                 {
@@ -181,6 +187,7 @@ namespace TeaserDSV
             else
             {
                 this.Location = screens[0].WorkingArea.Location;
+                this.Size=new Size(SettingsHolder.Instance.WindowWidth,SettingsHolder.Instance.WindowHeight);
             }
             Scales.SetScale(this.Size);
 
@@ -194,7 +201,7 @@ namespace TeaserDSV
                 gr.ScaleTransform((float) this.Size.Width / oBMP.Width, (float) this.Size.Height / oBMP.Height);
             }
 
-            
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
 
             //CopyBitmaps(oBMP, bmpConverted);
             oBMP = bmpConverted;
@@ -555,8 +562,7 @@ namespace TeaserDSV
             {
                 try
                 {
-                    areCalcParticles.Set();
-                    areNewSixMessage.WaitOne();
+                   areNewSixMessage.WaitOne();
                     swProjTimer.Restart();
 
                     if (conqSixMsgs.Count > 0)
@@ -578,6 +584,7 @@ namespace TeaserDSV
                     }
                     dTime = (double)swProjTimer.ElapsedTicks / Stopwatch.Frequency * 1000D;
                     ProjCalcTime = dTime;
+                    //areCalcParticles.Set();
                 }
                 catch (Exception e)
                 {
