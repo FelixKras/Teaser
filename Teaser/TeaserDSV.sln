@@ -1,14 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2048
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeaserDSV", "TeaserDSV\TeaserDSV.csproj", "{FFA28F59-46A5-455B-8893-817822841F10}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DisplayForm", "DisplayForm\DisplayForm.csproj", "{466E825F-F79D-4539-943F-CA8116436C21}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -18,12 +17,19 @@ Global
 		{FFA28F59-46A5-455B-8893-817822841F10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FFA28F59-46A5-455B-8893-817822841F10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FFA28F59-46A5-455B-8893-817822841F10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{466E825F-F79D-4539-943F-CA8116436C21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{466E825F-F79D-4539-943F-CA8116436C21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{466E825F-F79D-4539-943F-CA8116436C21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{466E825F-F79D-4539-943F-CA8116436C21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40A0B106-55F3-491F-8C86-0FFECA327F38}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

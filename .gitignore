@@ -3,3 +3,6 @@
 ################################################################################
 
 /Teaser/TeaserDSV/obj
+/Teaser/DisplayForm/obj
+/Teaser/DisplayForm/bin/Release
+/Teaser/DisplayForm/bin/Debug
